@@ -4,17 +4,6 @@
 -- ============================================================
 
 
--- ------------------------------------------------------------
--- Bills
---
--- Organization users:
---   SELECT + write with permission.
---
--- Tenant:
---   SELECT own bills only.
---   No INSERT / UPDATE / DELETE.
--- ------------------------------------------------------------
-
 create policy bills_select
 on kiraya.bills
 for select
@@ -32,7 +21,9 @@ on kiraya.bills
 for insert
 to authenticated
 with check (
-    kiraya.can_write_organization(organization_id)
+    kiraya.can_write_organization(
+        organization_id
+    )
 );
 
 
@@ -41,10 +32,14 @@ on kiraya.bills
 for update
 to authenticated
 using (
-    kiraya.can_write_organization(organization_id)
+    kiraya.can_write_organization(
+        organization_id
+    )
 )
 with check (
-    kiraya.can_write_organization(organization_id)
+    kiraya.can_write_organization(
+        organization_id
+    )
 );
 
 
@@ -107,6 +102,7 @@ with check (
           and kiraya.can_write_organization(
               b.organization_id
           )
+    )
 );
 
 
@@ -169,4 +165,5 @@ with check (
           and kiraya.can_write_organization(
               b.organization_id
           )
+    )
 );

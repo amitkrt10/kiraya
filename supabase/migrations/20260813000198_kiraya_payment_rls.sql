@@ -4,17 +4,6 @@
 -- ============================================================
 
 
--- ------------------------------------------------------------
--- Payments
---
--- Tenant:
---   Can see own payments.
---   Cannot create / edit payments.
---
--- Organization:
---   Can manage payments with WRITE permission.
--- ------------------------------------------------------------
-
 create policy payments_select
 on kiraya.payments
 for select
@@ -32,7 +21,9 @@ on kiraya.payments
 for insert
 to authenticated
 with check (
-    kiraya.can_write_organization(organization_id)
+    kiraya.can_write_organization(
+        organization_id
+    )
 );
 
 
@@ -41,10 +32,14 @@ on kiraya.payments
 for update
 to authenticated
 using (
-    kiraya.can_write_organization(organization_id)
+    kiraya.can_write_organization(
+        organization_id
+    )
 )
 with check (
-    kiraya.can_write_organization(organization_id)
+    kiraya.can_write_organization(
+        organization_id
+    )
 );
 
 
@@ -97,6 +92,7 @@ using (
           and kiraya.can_write_organization(
               p.organization_id
           )
+    )
 )
 with check (
     exists (
@@ -106,4 +102,5 @@ with check (
           and kiraya.can_write_organization(
               p.organization_id
           )
+    )
 );

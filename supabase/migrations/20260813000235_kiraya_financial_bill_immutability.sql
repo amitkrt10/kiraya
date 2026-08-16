@@ -1,0 +1,55 @@
+-- ============================================================
+-- KIRAYA
+-- P2.16 companion:
+-- finalized bill mutation guard
+-- ============================================================
+
+
+create or replace function kiraya.prevent_finalized_bill_mutation()
+returns trigger
+language plpgsql
+security invoker
+set search_path = kiraya, public
+as $$
+begin
+
+    if old.status = 'FINALIZED'
+       or old.status = 'PAID'
+       or old.status = 'PARTIALLY_PAID' then
+
+        if coalesce(
+            current_setting(
+                'kiraya.financial_context',
+                true
+            ),
+            ''
+        ) <> '1' then
+
+            raise exception
+                using
+                    errcode = '23514',
+                    message = 'Finalized financial records cannot be modified directly.';
+        end if;
+
+    end if;
+
+
+    return new;
+end;
+$$;
+
+perform set_config(
+    'kiraya.financial_context',
+    '1',
+    true
+);
+
+drop trigger if exists trg_prevent_finalized_bill_mutation
+on kiraya.bills;
+
+
+create trigger trg_prevent_finalized_bill_mutation
+before update
+on kiraya.bills
+for each row
+execute function kiraya.prevent_finalized_bill_mutation();
