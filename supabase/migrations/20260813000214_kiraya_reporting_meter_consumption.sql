@@ -1,64 +1,133 @@
 -- ============================================================
 -- KIRAYA
--- Migration: meter consumption reporting
+-- P3.3: meter consumption trend
+--
+-- Consumption is based on consecutive readings for the same
+-- meter.
+--
+-- A reset/replacement event starts a new reading sequence.
 -- ============================================================
+
 
 create or replace view kiraya.v_meter_consumption_trend
 with (security_invoker = true)
 as
-select
-    mr.organization_id,
+with readings as (
 
-    mr.meter_id,
+    select
+        mr.id as reading_id,
 
-    m.meter_number,
-    m.unit_id,
+        mr.organization_id,
+        mr.meter_id,
 
-    u.unit_number,
-    u.unit_name,
+        m.meter_code,
+        m.meter_type,
+        m.unit_id,
 
-    p.id as property_id,
-    p.name as property_name,
+        u.unit_code,
+        u.name as unit_name,
 
-    m.utility_id,
-    ut.name as utility_name,
+        p.id as property_id,
+        p.property_code,
+        p.name as property_name,
 
-    mr.reading_date,
-    mr.reading_value,
+        m.utility_id,
+        ut.name as utility_name,
 
-    lag(
-        mr.reading_value
-    ) over (
-        partition by mr.meter_id
-        order by
-            mr.reading_date,
-            mr.created_at
-    ) as previous_reading,
+        mr.reading_date,
+        mr.reading_value,
+        mr.reading_event_type,
 
-    greatest(
-        0,
-        mr.reading_value
-        -
         lag(
             mr.reading_value
         ) over (
             partition by mr.meter_id
             order by
                 mr.reading_date,
-                mr.created_at
+                mr.created_at,
+                mr.id
+        ) as previous_reading,
+
+        lag(
+            mr.reading_event_type
+        ) over (
+            partition by mr.meter_id
+            order by
+                mr.reading_date,
+                mr.created_at,
+                mr.id
+        ) as previous_event_type,
+
+        m.multiplier
+
+    from kiraya.meter_readings mr
+
+    join kiraya.meters m
+        on m.id = mr.meter_id
+
+    join kiraya.units u
+        on u.id = m.unit_id
+
+    join kiraya.properties p
+        on p.id = u.property_id
+
+    join kiraya.utilities ut
+        on ut.id = m.utility_id
+)
+
+select
+    reading_id,
+
+    organization_id,
+    meter_id,
+    meter_code,
+    meter_type,
+
+    unit_id,
+    unit_code,
+    unit_name,
+
+    property_id,
+    property_code,
+    property_name,
+
+    utility_id,
+    utility_name,
+
+    reading_date,
+    reading_value,
+
+    previous_reading,
+
+    case
+        when previous_reading is null
+            then null
+
+        when reading_event_type in (
+            'METER_RESET',
+            'METER_REPLACEMENT'
         )
-    ) * m.multiplier as consumption
+            then null
 
-from kiraya.meter_readings mr
+        when previous_event_type in (
+            'METER_RESET',
+            'METER_REPLACEMENT'
+        )
+            then null
 
-join kiraya.meters m
-    on m.id = mr.meter_id
+        when reading_value < previous_reading
+            then null
 
-join kiraya.units u
-    on u.id = m.unit_id
+        else
+            round(
+                (
+                    reading_value
+                    - previous_reading
+                ) * multiplier,
+                6
+            )
+    end as consumption,
 
-join kiraya.properties p
-    on p.id = u.property_id
+    reading_event_type
 
-join kiraya.utilities ut
-    on ut.id = m.utility_id;
+from readings;

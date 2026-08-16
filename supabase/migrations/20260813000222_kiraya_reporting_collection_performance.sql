@@ -1,86 +1,149 @@
 -- ============================================================
 -- KIRAYA
--- Migration: collection performance reporting
+-- P3.11: collection performance
 --
--- Purpose:
--- Provides monthly billed vs collected numbers.
+-- IMPORTANT:
+--
+-- Collection % measures actual posted money/credits received
+-- during the selected billing period against finalized bills
+-- for that period.
+--
+-- It does NOT use payment allocations because allocations can
+-- settle bills from another period.
 -- ============================================================
+
 
 create or replace view kiraya.v_collection_performance
 with (security_invoker = true)
 as
+with monthly_bills as (
+
+    select
+        b.organization_id,
+
+        date_trunc(
+            'month',
+            b.bill_date
+        )::date as period_month,
+
+        count(*) as bill_count,
+
+        coalesce(
+            sum(b.total_amount),
+            0
+        ) as billed_amount
+
+    from kiraya.bills b
+
+    where b.status in (
+        'FINALIZED',
+        'PARTIALLY_PAID',
+        'PAID'
+    )
+
+    group by
+        b.organization_id,
+        date_trunc(
+            'month',
+            b.bill_date
+        )::date
+),
+
+monthly_payments as (
+
+    select
+        p.organization_id,
+
+        date_trunc(
+            'month',
+            p.payment_date
+        )::date as period_month,
+
+        count(*) as payment_count,
+
+        coalesce(
+            sum(p.amount),
+            0
+        ) as collected_amount
+
+    from kiraya.payments p
+
+    where p.status = 'POSTED'
+
+    group by
+        p.organization_id,
+        date_trunc(
+            'month',
+            p.payment_date
+        )::date
+)
+
 select
-    b.organization_id,
-
-    date_trunc(
-        'month',
-        b.bill_date
-    )::date as collection_month,
-
-    count(b.id) as bill_count,
+    coalesce(
+        b.organization_id,
+        p.organization_id
+    ) as organization_id,
 
     coalesce(
-        sum(b.total_amount)
-            filter (
-                where b.status <> 'VOID'
-            ),
+        b.period_month,
+        p.period_month
+    ) as period_month,
+
+    coalesce(
+        b.bill_count,
+        0
+    ) as bill_count,
+
+    coalesce(
+        b.billed_amount,
         0
     ) as billed_amount,
 
     coalesce(
-        sum(
-            kiraya.get_bill_paid_amount(b.id)
-        ) filter (
-            where b.status <> 'VOID'
-        ),
+        p.payment_count,
+        0
+    ) as payment_count,
+
+    coalesce(
+        p.collected_amount,
         0
     ) as collected_amount,
 
-    coalesce(
-        sum(
-            kiraya.get_bill_balance(b.id)
-        ) filter (
-            where b.status <> 'VOID'
-        ),
-        0
-    ) as outstanding_amount,
+    greatest(
+        0,
+        coalesce(
+            b.billed_amount,
+            0
+        )
+        -
+        coalesce(
+            p.collected_amount,
+            0
+        )
+    ) as collection_gap,
 
-    round(
-        case
-            when coalesce(
-                sum(b.total_amount)
-                    filter (
-                        where b.status <> 'VOID'
-                    ),
-                0
-            ) = 0
+    case
+        when coalesce(
+            b.billed_amount,
+            0
+        ) = 0
             then 0
 
-            else
-                (
-                    coalesce(
-                        sum(
-                            kiraya.get_bill_paid_amount(b.id)
-                        ) filter (
-                            where b.status <> 'VOID'
-                        ),
-                        0
-                    )
-                    /
-                    sum(b.total_amount)
-                        filter (
-                            where b.status <> 'VOID'
-                        )
-                ) * 100
-        end,
-        2
-    ) as collection_percentage
+        else round(
+            (
+                coalesce(
+                    p.collected_amount,
+                    0
+                )
+                /
+                b.billed_amount
+            ) * 100,
+            2
+        )
+    end as collection_percentage
 
-from kiraya.bills b
+from monthly_bills b
 
-group by
-    b.organization_id,
-    date_trunc(
-        'month',
-        b.bill_date
-    )::date;
+full outer join monthly_payments p
+    on p.organization_id = b.organization_id
+   and p.period_month = b.period_month;

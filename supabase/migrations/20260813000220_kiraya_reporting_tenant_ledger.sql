@@ -1,7 +1,8 @@
 -- ============================================================
 -- KIRAYA
--- Migration: tenant ledger reporting
+-- P3.9: tenant ledger
 -- ============================================================
+
 
 create or replace view kiraya.v_tenant_ledger
 with (security_invoker = true)
@@ -13,10 +14,10 @@ select
 
     le.tenant_id,
     t.tenant_code,
-    t.full_name as tenant_name,
+    t.display_name as tenant_name,
 
     le.lease_id,
-    l.lease_number,
+    l.lease_code,
 
     le.bill_id,
     b.bill_number,
@@ -29,20 +30,51 @@ select
 
     le.description,
 
-    le.debit_amount,
-    le.credit_amount,
+    coalesce(
+        le.debit_amount,
+        0
+    ) as debit_amount,
 
-    (
-        le.debit_amount - le.credit_amount
-    ) as net_amount,
+    coalesce(
+        le.credit_amount,
+        0
+    ) as credit_amount,
 
     le.currency_code,
+
     le.reference_code,
 
     le.is_reversal,
+
     le.reverses_entry_id,
 
-    le.created_at
+    le.created_at,
+
+    /*
+     * Running tenant balance:
+     *
+     * Debit  = tenant owes more
+     * Credit = tenant paid / has credit
+     */
+    sum(
+        coalesce(
+            le.debit_amount,
+            0
+        )
+        -
+        coalesce(
+            le.credit_amount,
+            0
+        )
+    ) over (
+        partition by le.tenant_id
+        order by
+            le.entry_date,
+            le.created_at,
+            le.id
+        rows between unbounded preceding
+        and current row
+    ) as running_balance
 
 from kiraya.ledger_entries le
 

@@ -1,17 +1,10 @@
 -- ============================================================
 -- KIRAYA
--- P2.2: security permissions
+-- P2 repair: security permissions
 -- ============================================================
 
-
 insert into kiraya.permissions (
-    code,
-    name,
-    description,
-    resource,
-    action,
-    is_system,
-    is_active
+    code, name, description, resource, action, is_system
 )
 values
 (
@@ -20,7 +13,6 @@ values
     'Allows write access to organization-managed data.',
     'organization',
     'write',
-    true,
     true
 ),
 (
@@ -29,7 +21,6 @@ values
     'Allows CSV imports into the organization.',
     'imports',
     'execute',
-    true,
     true
 )
 on conflict (code)
@@ -38,5 +29,4 @@ do update set
     description = excluded.description,
     resource = excluded.resource,
     action = excluded.action,
-    is_system = true,
-    is_active = true;
+    is_system = true;
