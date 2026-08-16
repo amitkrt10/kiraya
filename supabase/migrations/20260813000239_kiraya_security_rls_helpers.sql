@@ -154,3 +154,17 @@ set row_security = off
 as $$
     select kiraya.can_write_organization(p_organization_id);
 $$;
+
+
+create or replace function kiraya.can_import_organization(p_organization_id uuid)
+returns boolean
+language sql stable security definer
+set search_path = kiraya, public
+set row_security = off
+as $$
+    select kiraya.is_super_admin()
+        or kiraya.is_organization_admin(p_organization_id)
+        or kiraya.has_organization_permission(p_organization_id, 'imports.execute');
+$$;
+
+revoke all on function kiraya.can_import_organization(uuid) from public;

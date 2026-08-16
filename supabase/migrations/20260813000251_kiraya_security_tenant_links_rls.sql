@@ -3,7 +3,7 @@
 -- P2.13: tenant user link RLS
 -- ============================================================
 
-
+drop policy if exists tenant_user_links_select;
 create policy tenant_user_links_select
 on kiraya.tenant_user_links
 for select
@@ -20,7 +20,7 @@ using (
     )
 );
 
-
+drop policy if exists tenant_user_links_insert;
 create policy tenant_user_links_insert
 on kiraya.tenant_user_links
 for insert
@@ -37,6 +37,7 @@ with check (
 );
 
 
+drop policy if exists tenant_user_links_update;
 create policy tenant_user_links_update
 on kiraya.tenant_user_links
 for update
@@ -62,7 +63,7 @@ with check (
     )
 );
 
-
+drop policy if exists tenant_user_links_delete;
 create policy tenant_user_links_delete
 on kiraya.tenant_user_links
 for delete
