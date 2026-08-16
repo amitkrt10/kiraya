@@ -1,15 +1,33 @@
 -- ============================================================
 -- KIRAYA
 -- P2.13: tenant user link RLS
+--
+-- tenant_user_links determines which authenticated profiles
+-- are allowed to act as tenant users.
+--
+-- Rules:
+--   - A user can see their own tenant link.
+--   - Organization staff/admins can manage tenant links
+--     belonging to their organization.
+--   - Tenant users cannot create/update/delete their own links.
 -- ============================================================
 
-drop policy if exists tenant_user_links_select;
+
+-- ------------------------------------------------------------
+-- SELECT
+-- ------------------------------------------------------------
+
+drop policy if exists tenant_user_links_select
+on kiraya.tenant_user_links;
+
+
 create policy tenant_user_links_select
 on kiraya.tenant_user_links
 for select
 to authenticated
 using (
     profile_id = kiraya.current_profile_id()
+
     or exists (
         select 1
         from kiraya.tenants t
@@ -20,7 +38,15 @@ using (
     )
 );
 
-drop policy if exists tenant_user_links_insert;
+
+-- ------------------------------------------------------------
+-- INSERT
+-- ------------------------------------------------------------
+
+drop policy if exists tenant_user_links_insert
+on kiraya.tenant_user_links;
+
+
 create policy tenant_user_links_insert
 on kiraya.tenant_user_links
 for insert
@@ -37,7 +63,14 @@ with check (
 );
 
 
-drop policy if exists tenant_user_links_update;
+-- ------------------------------------------------------------
+-- UPDATE
+-- ------------------------------------------------------------
+
+drop policy if exists tenant_user_links_update
+on kiraya.tenant_user_links;
+
+
 create policy tenant_user_links_update
 on kiraya.tenant_user_links
 for update
@@ -63,7 +96,15 @@ with check (
     )
 );
 
-drop policy if exists tenant_user_links_delete;
+
+-- ------------------------------------------------------------
+-- DELETE
+-- ------------------------------------------------------------
+
+drop policy if exists tenant_user_links_delete
+on kiraya.tenant_user_links;
+
+
 create policy tenant_user_links_delete
 on kiraya.tenant_user_links
 for delete
