@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+
+<helmet>
+  <link rel="stylesheet" href="_ds/modernist-770299c4-bef0-4b86-ab27-1dc4c7fc8dab/styles.css">
+  <script src="_ds/modernist-770299c4-bef0-4b86-ab27-1dc4c7fc8dab/_ds_bundle.js"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <style>
+    body{margin:0;background:var(--color-bg);color:var(--color-text);font-family:var(--font-body);}
+    a{color:var(--color-accent-700);text-decoration:none;}
+    a:hover{color:var(--color-accent);text-decoration:underline;}
+    .lucide{width:16px;height:16px;stroke-width:2;vertical-align:middle;}
+  </style>
+</helmet>
+
+<div style="display:flex;min-height:100vh;">
+
+  <!-- SIDEBAR (dark = platform mode) -->
+  <aside style="width:248px;flex:0 0 248px;border-right:2px solid var(--color-neutral-700);display:flex;flex-direction:column;background:var(--color-neutral-900);color:var(--color-bg);">
+    <div style="padding:20px 20px;border-bottom:2px solid var(--color-neutral-700);display:flex;align-items:center;gap:10px;">
+      <div style="width:28px;height:28px;background:var(--color-accent);display:flex;align-items:center;justify-content:center;">
+        <span style="color:#fff;font-family:var(--font-heading);font-weight:700;font-size:15px;">K</span>
+      </div>
+      <div>
+        <div style="font-family:var(--font-heading);font-weight:700;font-size:18px;letter-spacing:0.02em;">KIRAYA</div>
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--color-neutral-300);">Platform Admin</div>
+      </div>
+    </div>
+
+    <nav style="flex:1;overflow-y:auto;padding:14px 12px;display:flex;flex-direction:column;gap:2px;">
+      <sc-for list="{{ navItems }}" as="item" hint-placeholder-count="5">
+        <a href="#" style="display:flex;align-items:center;gap:10px;padding:9px 10px;font-size:14px;font-weight:600;color:{{ item.active_color }};background:{{ item.active_bg }};text-decoration:none;">
+          <i data-lucide="{{ item.icon }}" class="lucide"></i>
+          <span>{{ item.label }}</span>
+        </a>
+      </sc-for>
+    </nav>
+
+    <div style="border-top:2px solid var(--color-neutral-700);padding:14px 20px;">
+      <div style="font-size:11px;color:var(--color-neutral-300);">Signed in as</div>
+      <div style="font-size:13px;font-weight:600;">Rohit Malhotra · Platform Admin</div>
+      <a href="#" style="display:block;margin-top:10px;font-size:12px;color:var(--color-neutral-300);">← Switch to organization view</a>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column;">
+
+    <header style="height:64px;flex:0 0 64px;border-bottom:2px solid var(--color-divider);display:flex;align-items:center;justify-content:space-between;padding:0 28px;background:var(--color-bg);">
+      <div>
+        <div style="font-size:12px;color:var(--color-neutral-700);">Platform / Dashboard</div>
+        <div style="font-family:var(--font-heading);font-weight:700;font-size:20px;">Platform Overview</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <div style="position:relative;">
+          <input class="input" placeholder="Search organizations…" style="width:260px;padding:8px 10px 8px 34px;font-size:14px;"/>
+          <i data-lucide="search" class="lucide" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--color-neutral-700);"></i>
+        </div>
+        <button class="btn-icon btn" title="Operational alerts" style="position:relative;">
+          <i data-lucide="bell" class="lucide"></i>
+          <span style="position:absolute;top:4px;right:4px;width:7px;height:7px;background:var(--color-accent);"></span>
+        </button>
+        <div style="width:24px;height:24px;background:var(--color-neutral-900);color:var(--color-bg);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">RM</div>
+      </div>
+    </header>
+
+    <main style="flex:1;padding:28px;overflow-y:auto;">
+
+      <!-- KPI STRIP -->
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);border:2px solid var(--color-divider);margin-bottom:28px;">
+        <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="6">
+          <div style="padding:16px 18px;border-right:2px solid var(--color-divider);">
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--color-neutral-700);margin-bottom:8px;">{{ k.label }}</div>
+            <div style="font-family:var(--font-heading);font-weight:700;font-size:26px;line-height:1;">{{ k.value }}</div>
+            <div style="font-size:12px;margin-top:8px;color:{{ k.delta_color }};">{{ k.delta }}</div>
+          </div>
+        </sc-for>
+      </div>
+
+      <!-- OPERATIONAL ALERTS -->
+      <div style="border:2px solid var(--color-divider);padding:18px 20px;margin-bottom:28px;background:var(--color-neutral-100);">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <i data-lucide="alert-triangle" class="lucide" style="color:var(--color-accent-700);"></i>
+          <div style="font-family:var(--font-heading);font-weight:700;font-size:15px;">Operational Alerts</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <sc-for list="{{ alerts }}" as="a" hint-placeholder-count="3">
+            <a href="#" style="display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--color-text);text-decoration:none;padding:8px 0;border-bottom:1px solid var(--color-neutral-300);">
+              <span>{{ a.text }}</span>
+              <span class="tag {{ a.tag_class }}">{{ a.severity }}</span>
+            </a>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- ORGANIZATION HEALTH TABLE -->
+      <div style="border:2px solid var(--color-divider);padding:20px;margin-bottom:28px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+          <div style="font-family:var(--font-heading);font-weight:700;font-size:16px;">Organization Health</div>
+          <a href="#" style="font-size:13px;font-weight:600;">View all organizations →</a>
+        </div>
+        <table class="table" style="width:100%;">
+          <thead>
+            <tr>
+              <th>Organization</th><th>Status</th><th style="text-align:right;">Properties</th><th style="text-align:right;">Units</th>
+              <th style="text-align:right;">Occupancy</th><th style="text-align:right;">Outstanding</th><th style="text-align:right;">Collection Rate</th><th>Last Activity</th>
+            </tr>
+          </thead>
+          <tbody>
+            <sc-for list="{{ orgs }}" as="o" hint-placeholder-count="6">
+              <tr>
+                <td style="font-weight:600;"><a href="#">{{ o.name }}</a></td>
+                <td><span class="tag {{ o.status_class }}">{{ o.status }}</span></td>
+                <td style="text-align:right;">{{ o.properties }}</td>
+                <td style="text-align:right;">{{ o.units }}</td>
+                <td style="text-align:right;">{{ o.occupancy }}</td>
+                <td style="text-align:right;font-variant-numeric:tabular-nums;color:{{ o.outstanding_color }};">{{ o.outstanding }}</td>
+                <td style="text-align:right;">{{ o.collection_rate }}</td>
+                <td style="color:var(--color-neutral-700);">{{ o.last_activity }}</td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- PLATFORM COLLECTIONS -->
+      <div style="border:2px solid var(--color-divider);padding:20px;">
+        <div style="font-family:var(--font-heading);font-weight:700;font-size:16px;margin-bottom:16px;">Platform Collections — Last 6 Months</div>
+        <div style="display:flex;align-items:flex-end;gap:20px;height:150px;border-bottom:2px solid var(--color-divider);">
+          <sc-for list="{{ platformBars }}" as="b" hint-placeholder-count="6">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px;">
+              <div style="font-size:11px;color:var(--color-neutral-700);">₹{{ b.crores }}Cr</div>
+              <div style="width:100%;height:130px;position:relative;background:var(--color-neutral-100);">
+                <div style="position:absolute;bottom:0;left:0;right:0;height:{{ b.h }}px;background:var(--color-neutral-900);"></div>
+              </div>
+              <div style="font-size:11px;color:var(--color-neutral-700);margin-top:6px;">{{ b.month }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  componentDidMount() {
+    this.iconTimer = setInterval(() => { if (window.lucide) { window.lucide.createIcons(); clearInterval(this.iconTimer); } }, 50);
+  }
+  componentDidUpdate() { if (window.lucide) window.lucide.createIcons(); }
+  componentWillUnmount() { clearInterval(this.iconTimer); }
+
+  renderVals() {
+    const navItems = [
+      { icon: 'layout-dashboard', label: 'Platform Dashboard', active_color: 'var(--color-neutral-900)', active_bg: 'var(--color-bg)' },
+      { icon: 'building', label: 'Organizations', active_color: 'var(--color-bg)', active_bg: 'transparent' },
+      { icon: 'bar-chart-3', label: 'Platform Reports', active_color: 'var(--color-bg)', active_bg: 'transparent' },
+      { icon: 'life-buoy', label: 'Support & Ops', active_color: 'var(--color-bg)', active_bg: 'transparent' },
+      { icon: 'settings', label: 'Platform Settings', active_color: 'var(--color-bg)', active_bg: 'transparent' },
+    ];
+
+    const alerts = [
+      { text: '3 organizations have bills overdue by 30+ days', severity: 'High', tag_class: 'tag-accent' },
+      { text: 'Green Court Estates: import job failed (12 rows)', severity: 'Medium', tag_class: 'tag-outline' },
+      { text: 'Lakeview Residency: no activity in 21 days', severity: 'Low', tag_class: 'tag-neutral' },
+    ];
+
+    const orgStatus = (s) => ({
+      'Active': 'tag-neutral', 'Trial': 'tag-outline', 'At Risk': 'tag-accent'
+    }[s] || 'tag-outline');
+
+    const orgs = [
+      { name: 'Sundaram Estates', status: 'Active', properties: 12, units: 186, occupancy: '95.2%', outstanding: '₹6,12,400', collection_rate: '90%', last_activity: 'Today' },
+      { name: 'Green Court Estates', status: 'At Risk', properties: 8, units: 104, occupancy: '88.4%', outstanding: '₹14,80,000', collection_rate: '71%', last_activity: '2 days ago' },
+      { name: 'Lakeview Residency', status: 'Active', properties: 5, units: 62, occupancy: '96.7%', outstanding: '₹1,20,000', collection_rate: '97%', last_activity: '21 days ago' },
+      { name: 'Nilgiri Homes', status: 'Trial', properties: 2, units: 18, occupancy: '83.3%', outstanding: '₹40,500', collection_rate: '85%', last_activity: 'Yesterday' },
+      { name: 'Bayview Properties', status: 'Active', properties: 15, units: 240, occupancy: '92.1%', outstanding: '₹9,05,000', collection_rate: '88%', last_activity: 'Today' },
+      { name: 'Ashoka Housing Co.', status: 'Active', properties: 6, units: 78, occupancy: '97.4%', outstanding: '₹85,200', collection_rate: '96%', last_activity: 'Today' },
+    ].map(o => ({ ...o, status_class: orgStatus(o.status), outstanding_color: o.status === 'At Risk' ? 'var(--color-accent-700)' : 'var(--color-text)' }));
+
+    const raw = [ ['Mar',2.1],['Apr',2.4],['May',2.2],['Jun',2.6],['Jul',2.9],['Aug',2.7] ];
+    const max = Math.max(...raw.map(r => r[1]));
+    const platformBars = raw.map(([month, cr]) => ({ month, crores: cr.toFixed(1), h: Math.round(130 * cr / max) }));
+
+    return {
+      navItems,
+      kpis: [
+        { label: 'Organizations', value: '38', delta: '4 new this quarter', delta_color: 'var(--color-neutral-700)' },
+        { label: 'Active Orgs', value: '34', delta: '89% active rate', delta_color: 'var(--color-text)' },
+        { label: 'Properties', value: '312', delta: 'across platform', delta_color: 'var(--color-neutral-700)' },
+        { label: 'Units', value: '4,860', delta: '92.6% occupied', delta_color: 'var(--color-text)' },
+        { label: 'Outstanding', value: '₹1.42Cr', delta: '3 orgs at risk', delta_color: 'var(--color-accent-700)' },
+        { label: 'Collected (Aug)', value: '₹2.7Cr', delta: '90% of billed', delta_color: 'var(--color-text)' },
+      ],
+      alerts,
+      orgs,
+      platformBars,
+    };
+  }
+}
+
+</script>
+</body>
+</html>

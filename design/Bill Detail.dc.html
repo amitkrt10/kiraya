@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+
+<helmet>
+  <link rel="stylesheet" href="_ds/modernist-770299c4-bef0-4b86-ab27-1dc4c7fc8dab/styles.css">
+  <script src="_ds/modernist-770299c4-bef0-4b86-ab27-1dc4c7fc8dab/_ds_bundle.js"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <style>
+    body{margin:0;background:var(--color-bg);color:var(--color-text);font-family:var(--font-body);}
+    a{color:var(--color-accent-700);text-decoration:none;}
+    a:hover{color:var(--color-accent);text-decoration:underline;}
+    .lucide{width:16px;height:16px;stroke-width:2;vertical-align:middle;}
+  </style>
+</helmet>
+
+<div style="display:flex;min-height:100vh;">
+  <aside style="width:248px;flex:0 0 248px;border-right:2px solid var(--color-divider);display:flex;flex-direction:column;background:var(--color-bg);">
+    <div style="padding:20px 20px;border-bottom:2px solid var(--color-divider);display:flex;align-items:center;gap:10px;">
+      <div style="width:28px;height:28px;background:var(--color-text);display:flex;align-items:center;justify-content:center;">
+        <span style="color:var(--color-bg);font-family:var(--font-heading);font-weight:700;font-size:15px;">K</span>
+      </div>
+      <span style="font-family:var(--font-heading);font-weight:700;font-size:18px;letter-spacing:0.02em;">KIRAYA</span>
+    </div>
+    <nav style="flex:1;overflow-y:auto;padding:14px 12px;">
+      <sc-for list="{{ navItems }}" as="item" hint-placeholder-count="6">
+        <a href="#" style="display:flex;align-items:center;gap:10px;padding:8px 10px;font-size:14px;font-weight:600;color:{{ item.active_color }};background:{{ item.active_bg }};text-decoration:none;margin-bottom:2px;">
+          <i data-lucide="{{ item.icon }}" class="lucide"></i><span>{{ item.label }}</span>
+        </a>
+      </sc-for>
+    </nav>
+  </aside>
+
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column;">
+    <header style="height:64px;flex:0 0 64px;border-bottom:2px solid var(--color-divider);display:flex;align-items:center;justify-content:space-between;padding:0 28px;">
+      <div style="font-size:12px;color:var(--color-neutral-700);">Sundaram Estates / Billing / {{ bill.number }}</div>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <button class="btn-icon btn"><i data-lucide="bell" class="lucide"></i></button>
+        <div style="width:24px;height:24px;background:var(--color-neutral-900);color:var(--color-bg);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">DN</div>
+      </div>
+    </header>
+
+    <main style="flex:1;padding:28px;overflow-y:auto;max-width:920px;">
+
+      <!-- HEADER -->
+      <div style="border:2px solid var(--color-divider);padding:20px 24px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="font-family:var(--font-heading);font-weight:700;font-size:22px;">{{ bill.number }}</div>
+            <span class="tag {{ bill.tag_class }}"><i data-lucide="{{ bill.icon }}" class="lucide" style="width:12px;height:12px;margin-right:4px;"></i>{{ bill.status }}</span>
+          </div>
+          <div style="font-size:13px;color:var(--color-neutral-700);margin-top:4px;">
+            <a href="#">{{ bill.tenant }}</a> · {{ bill.property }} · {{ bill.period }}
+          </div>
+        </div>
+        <sc-if value="{{ canAct }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;gap:10px;">
+            <sc-if value="{{ isDraft }}" hint-placeholder-val="{{ false }}">
+              <button class="btn btn-primary"><i data-lucide="check" class="lucide" style="margin-right:6px;"></i>Finalize Bill</button>
+            </sc-if>
+            <sc-if value="{{ canVoid }}" hint-placeholder-val="{{ true }}">
+              <button class="btn btn-secondary"><i data-lucide="ban" class="lucide" style="margin-right:6px;"></i>Void Bill</button>
+            </sc-if>
+            <button class="btn btn-primary"><i data-lucide="plus" class="lucide" style="margin-right:6px;"></i>Record Payment</button>
+          </div>
+        </sc-if>
+        <sc-if value="{{ !canAct }}" hint-placeholder-val="{{ false }}">
+          <div style="font-size:12px;color:var(--color-neutral-700);max-width:220px;text-align:right;">Financial actions require Accountant or Admin access.</div>
+        </sc-if>
+      </div>
+
+      <!-- CHARGES -->
+      <div style="border:2px solid var(--color-divider);padding:20px 24px;margin-bottom:20px;">
+        <div style="font-family:var(--font-heading);font-weight:700;font-size:15px;margin-bottom:14px;">Charges</div>
+        <table class="table" style="width:100%;">
+          <thead><tr><th>Description</th><th style="text-align:right;">Amount</th></tr></thead>
+          <tbody>
+            <sc-for list="{{ charges }}" as="c" hint-placeholder-count="4">
+              <tr><td>{{ c.desc }}</td><td style="text-align:right;font-variant-numeric:tabular-nums;">{{ c.amount }}</td></tr>
+            </sc-for>
+          </tbody>
+        </table>
+        <div style="display:flex;justify-content:space-between;padding:10px 0;font-size:13px;color:var(--color-neutral-700);border-top:1px solid var(--color-neutral-300);margin-top:8px;">
+          <span>Subtotal</span><span style="font-variant-numeric:tabular-nums;">{{ bill.subtotal }}</span>
+        </div>
+        <sc-for list="{{ adjustments }}" as="a" hint-placeholder-count="1">
+          <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;color:var(--color-neutral-700);">
+            <span>{{ a.desc }}</span><span style="font-variant-numeric:tabular-nums;">{{ a.amount }}</span>
+          </div>
+        </sc-for>
+        <div style="display:flex;justify-content:space-between;padding:12px 0 0;font-size:17px;font-weight:700;font-family:var(--font-heading);border-top:2px solid var(--color-text);margin-top:8px;">
+          <span>Total</span><span style="font-variant-numeric:tabular-nums;">{{ bill.total }}</span>
+        </div>
+      </div>
+
+      <!-- PAYMENT SUMMARY -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);border:2px solid var(--color-divider);margin-bottom:20px;">
+        <div style="padding:16px 18px;border-right:2px solid var(--color-divider);">
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--color-neutral-700);margin-bottom:8px;">Paid</div>
+          <div style="font-family:var(--font-heading);font-weight:700;font-size:22px;">{{ bill.paid }}</div>
+        </div>
+        <div style="padding:16px 18px;border-right:2px solid var(--color-divider);">
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--color-neutral-700);margin-bottom:8px;">Credit Applied</div>
+          <div style="font-family:var(--font-heading);font-weight:700;font-size:22px;">{{ bill.credit_applied }}</div>
+        </div>
+        <div style="padding:16px 18px;">
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--color-neutral-700);margin-bottom:8px;">Outstanding</div>
+          <div style="font-family:var(--font-heading);font-weight:700;font-size:22px;color:{{ bill.outstanding_color }};">{{ bill.outstanding }}</div>
+        </div>
+      </div>
+
+      <!-- PAYMENTS AGAINST THIS BILL -->
+      <div style="border:2px solid var(--color-divider);padding:20px 24px;">
+        <div style="font-family:var(--font-heading);font-weight:700;font-size:15px;margin-bottom:14px;">Payments Applied</div>
+        <table class="table" style="width:100%;">
+          <thead><tr><th>Date</th><th>Method</th><th>Reference</th><th style="text-align:right;">Amount Applied</th></tr></thead>
+          <tbody>
+            <sc-for list="{{ appliedPayments }}" as="p" hint-placeholder-count="2">
+              <tr><td>{{ p.date }}</td><td>{{ p.method }}</td><td style="color:var(--color-neutral-700);">{{ p.reference }}</td><td style="text-align:right;font-variant-numeric:tabular-nums;"><a href="#">{{ p.amount }}</a></td></tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;role&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;default&quot;: &quot;Org Administrator&quot;, &quot;options&quot;: [&quot;Org Administrator&quot;, &quot;Viewer&quot;], &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Permissions&quot;}, &quot;status&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;default&quot;: &quot;Partially Paid&quot;, &quot;options&quot;: [&quot;Draft&quot;, &quot;Finalized&quot;, &quot;Paid&quot;, &quot;Partially Paid&quot;, &quot;Overdue&quot;, &quot;Void&quot;], &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Bill state&quot;}}">
+class Component extends DCLogic {
+  componentDidMount() { this.iconTimer = setInterval(() => { if (window.lucide) { window.lucide.createIcons(); clearInterval(this.iconTimer); } }, 50); }
+  componentDidUpdate() { if (window.lucide) window.lucide.createIcons(); }
+  componentWillUnmount() { clearInterval(this.iconTimer); }
+
+  renderVals() {
+    const role = this.props.role ?? 'Org Administrator';
+    const canAct = role !== 'Viewer';
+
+    const navItems = [
+      { icon: 'layout-dashboard', label: 'Dashboard' },
+      { icon: 'building-2', label: 'Properties' },
+      { icon: 'users', label: 'Tenants' },
+      { icon: 'file-signature', label: 'Leases' },
+      { icon: 'receipt', label: 'Billing', active: true },
+      { icon: 'credit-card', label: 'Payments' },
+    ].map(i => ({ ...i, active_color: i.active ? '#f3f2f2' : 'var(--color-text)', active_bg: i.active ? 'var(--color-text)' : 'transparent' }));
+
+    const status = this.props.status ?? 'Partially Paid';
+    const tagFor = (s) => ({
+      'Draft': { tag_class: 'tag-outline', icon: 'file-edit' },
+      'Finalized': { tag_class: 'tag-neutral', icon: 'check-check' },
+      'Paid': { tag_class: 'tag-neutral', icon: 'check' },
+      'Partially Paid': { tag_class: 'tag-outline', icon: 'circle-dot' },
+      'Overdue': { tag_class: 'tag-accent', icon: 'alert-triangle' },
+      'Void': { tag_class: 'tag-neutral', icon: 'ban' },
+    }[s] || { tag_class: 'tag-outline', icon: 'circle' });
+
+    return {
+      canAct,
+      isDraft: status === 'Draft',
+      canVoid: status !== 'Paid' && status !== 'Void',
+      navItems,
+      bill: {
+        number: 'INV-2206', tenant: 'Ananya Rao', property: 'Shanti Nivas · A-302', period: 'Jun 2026',
+        status, ...tagFor(status),
+        subtotal: '₹32,000', total: '₹32,000', paid: '₹15,000', credit_applied: '₹0',
+        outstanding: '₹17,000', outstanding_color: 'var(--color-accent-700)',
+      },
+      charges: [
+        { desc: 'Monthly Rent — June 2026', amount: '₹28,000' },
+        { desc: 'Maintenance Charge', amount: '₹3,000' },
+        { desc: 'Water Utility (Meter reading 412→438)', amount: '₹1,000' },
+      ],
+      adjustments: [
+        { desc: 'Late fee waiver — goodwill adjustment', amount: '−₹0' },
+      ],
+      appliedPayments: [
+        { date: '18/06/2026', method: 'Cash', reference: '—', amount: '₹15,000' },
+      ],
+    };
+  }
+}
+
+</script>
+</body>
+</html>

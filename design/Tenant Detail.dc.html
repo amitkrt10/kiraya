@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+
+<helmet>
+  <link rel="stylesheet" href="_ds/modernist-770299c4-bef0-4b86-ab27-1dc4c7fc8dab/styles.css">
+  <script src="_ds/modernist-770299c4-bef0-4b86-ab27-1dc4c7fc8dab/_ds_bundle.js"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <style>
+    body{margin:0;background:var(--color-bg);color:var(--color-text);font-family:var(--font-body);}
+    a{color:var(--color-accent-700);text-decoration:none;}
+    a:hover{color:var(--color-accent);text-decoration:underline;}
+    .lucide{width:16px;height:16px;stroke-width:2;vertical-align:middle;}
+  </style>
+</helmet>
+
+<div style="display:flex;min-height:100vh;">
+  <aside style="width:248px;flex:0 0 248px;border-right:2px solid var(--color-divider);display:flex;flex-direction:column;background:var(--color-bg);">
+    <div style="padding:20px 20px;border-bottom:2px solid var(--color-divider);display:flex;align-items:center;gap:10px;">
+      <div style="width:28px;height:28px;background:var(--color-text);display:flex;align-items:center;justify-content:center;">
+        <span style="color:var(--color-bg);font-family:var(--font-heading);font-weight:700;font-size:15px;">K</span>
+      </div>
+      <span style="font-family:var(--font-heading);font-weight:700;font-size:18px;letter-spacing:0.02em;">KIRAYA</span>
+    </div>
+    <nav style="flex:1;overflow-y:auto;padding:14px 12px;">
+      <sc-for list="{{ navItems }}" as="item" hint-placeholder-count="6">
+        <a href="#" style="display:flex;align-items:center;gap:10px;padding:8px 10px;font-size:14px;font-weight:600;color:{{ item.active_color }};background:{{ item.active_bg }};text-decoration:none;margin-bottom:2px;">
+          <i data-lucide="{{ item.icon }}" class="lucide"></i><span>{{ item.label }}</span>
+        </a>
+      </sc-for>
+    </nav>
+  </aside>
+
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column;">
+    <header style="height:64px;flex:0 0 64px;border-bottom:2px solid var(--color-divider);display:flex;align-items:center;justify-content:space-between;padding:0 28px;">
+      <div style="font-size:12px;color:var(--color-neutral-700);">Sundaram Estates / Tenants / {{ tenant.name }}</div>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <button class="btn-icon btn"><i data-lucide="bell" class="lucide"></i></button>
+        <div style="width:24px;height:24px;background:var(--color-neutral-900);color:var(--color-bg);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">DN</div>
+      </div>
+    </header>
+
+    <main style="flex:1;padding:28px;overflow-y:auto;">
+
+      <!-- HEADER BAND -->
+      <div style="border:2px solid var(--color-divider);padding:20px 24px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:16px;">
+          <div style="width:52px;height:52px;background:var(--color-neutral-900);color:var(--color-bg);display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-weight:700;font-size:20px;">{{ tenant.initials }}</div>
+          <div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="font-family:var(--font-heading);font-weight:700;font-size:22px;">{{ tenant.name }}</div>
+              <span class="tag tag-neutral">{{ tenant.status }}</span>
+            </div>
+            <div style="font-size:13px;color:var(--color-neutral-700);margin-top:4px;">{{ tenant.unit }} · {{ tenant.phone }} · {{ tenant.email }}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-secondary"><i data-lucide="file-text" class="lucide" style="margin-right:6px;"></i>View Lease</button>
+          <div title="{{ permissionNote }}">
+            <button class="btn btn-primary" disabled="{{ isViewer }}" style="opacity:{{ recordOpacity }};cursor:{{ recordCursor }};"><i data-lucide="plus" class="lucide" style="margin-right:6px;"></i>Record Payment</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUMMARY TILES -->
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);border:2px solid var(--color-divider);margin-bottom:20px;">
+        <sc-for list="{{ tiles }}" as="t" hint-placeholder-count="5">
+          <div style="padding:16px 18px;border-right:2px solid var(--color-divider);">
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--color-neutral-700);margin-bottom:8px;">{{ t.label }}</div>
+            <div style="font-family:var(--font-heading);font-weight:700;font-size:22px;color:{{ t.color }};">{{ t.value }}</div>
+          </div>
+        </sc-for>
+      </div>
+
+      <!-- TABS -->
+      <div style="display:flex;gap:0;border-bottom:2px solid var(--color-divider);margin-bottom:20px;">
+        <sc-for list="{{ tabs }}" as="tab" hint-placeholder-count="7">
+          <button onClick="{{ tab.onClick }}" style="background:none;border:none;padding:10px 18px;font-family:var(--font-body);font-size:14px;font-weight:600;cursor:pointer;color:{{ tab.color }};border-bottom:3px solid {{ tab.border }};margin-bottom:-2px;">{{ tab.label }}</button>
+        </sc-for>
+      </div>
+
+      <!-- OVERVIEW TAB -->
+      <sc-if value="{{ isOverview }}" hint-placeholder-val="{{ true }}">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border:2px solid var(--color-divider);">
+          <div style="border-right:2px solid var(--color-divider);padding:20px;">
+            <div style="font-family:var(--font-heading);font-weight:700;font-size:15px;margin-bottom:12px;">Lease Summary</div>
+            <sc-for list="{{ leaseRows }}" as="r" hint-placeholder-count="5">
+              <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--color-neutral-300);font-size:13px;">
+                <span style="color:var(--color-neutral-700);">{{ r.label }}</span><span style="font-weight:600;">{{ r.value }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="padding:20px;">
+            <div style="font-family:var(--font-heading);font-weight:700;font-size:15px;margin-bottom:12px;">Upcoming Actions</div>
+            <sc-for list="{{ upcomingActions }}" as="a" hint-placeholder-count="3">
+              <div style="display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--color-neutral-300);">
+                <i data-lucide="{{ a.icon }}" class="lucide" style="margin-top:2px;color:{{ a.color }};"></i>
+                <div style="font-size:13px;">{{ a.text }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- BILLS TAB -->
+      <sc-if value="{{ isBills }}" hint-placeholder-val="{{ false }}">
+        <table class="table" style="width:100%;">
+          <thead><tr><th>Bill #</th><th>Period</th><th style="text-align:right;">Total</th><th style="text-align:right;">Paid</th><th style="text-align:right;">Outstanding</th><th>Status</th></tr></thead>
+          <tbody>
+            <sc-for list="{{ bills }}" as="b" hint-placeholder-count="5">
+              <tr>
+                <td style="font-weight:600;"><a href="#">{{ b.number }}</a></td>
+                <td>{{ b.period }}</td>
+                <td style="text-align:right;font-variant-numeric:tabular-nums;">{{ b.total }}</td>
+                <td style="text-align:right;font-variant-numeric:tabular-nums;">{{ b.paid }}</td>
+                <td style="text-align:right;font-variant-numeric:tabular-nums;">{{ b.outstanding }}</td>
+                <td><span class="tag {{ b.tag_class }}"><i data-lucide="{{ b.icon }}" class="lucide" style="width:12px;height:12px;margin-right:4px;"></i>{{ b.status }}</span></td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </sc-if>
+
+      <!-- PAYMENTS TAB -->
+      <sc-if value="{{ isPayments }}" hint-placeholder-val="{{ false }}">
+        <table class="table" style="width:100%;">
+          <thead><tr><th>Date</th><th>Method</th><th>Reference</th><th style="text-align:right;">Amount</th><th>Status</th></tr></thead>
+          <tbody>
+            <sc-for list="{{ payments }}" as="p" hint-placeholder-count="5">
+              <tr>
+                <td>{{ p.date }}</td><td>{{ p.method }}</td><td style="color:var(--color-neutral-700);">{{ p.reference }}</td>
+                <td style="text-align:right;font-variant-numeric:tabular-nums;">{{ p.amount }}</td>
+                <td><span class="tag {{ p.tag_class }}">{{ p.status }}</span></td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </sc-if>
+
+      <!-- LEDGER TAB -->
+      <sc-if value="{{ isLedger }}" hint-placeholder-val="{{ false }}">
+        <table class="table" style="width:100%;">
+          <thead><tr><th>Date</th><th>Description</th><th style="text-align:right;">Debit</th><th style="text-align:right;">Credit</th><th style="text-align:right;">Balance</th></tr></thead>
+          <tbody>
+            <sc-for list="{{ ledger }}" as="l" hint-placeholder-count="6">
+              <tr>
+                <td>{{ l.date }}</td><td>{{ l.desc }}</td>
+                <td style="text-align:right;font-variant-numeric:tabular-nums;">{{ l.debit }}</td>
+                <td style="text-align:right;font-variant-numeric:tabular-nums;">{{ l.credit }}</td>
+                <td style="text-align:right;font-variant-numeric:tabular-nums;font-weight:600;">{{ l.balance }}</td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </sc-if>
+
+      <!-- DOCUMENTS TAB -->
+      <sc-if value="{{ isDocuments }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:0;border:2px solid var(--color-divider);">
+          <sc-for list="{{ documents }}" as="d" hint-placeholder-count="4">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:2px solid var(--color-divider);">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <i data-lucide="file-text" class="lucide"></i>
+                <div>
+                  <div style="font-size:13px;font-weight:600;">{{ d.name }}</div>
+                  <div style="font-size:12px;color:var(--color-neutral-700);">{{ d.meta }}</div>
+                </div>
+              </div>
+              <button class="btn-icon btn"><i data-lucide="download" class="lucide"></i></button>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <!-- LEASE TAB -->
+      <sc-if value="{{ isLease }}" hint-placeholder-val="{{ false }}">
+        <div style="border:2px solid var(--color-divider);padding:20px;">
+          <div style="font-family:var(--font-heading);font-weight:700;font-size:15px;margin-bottom:12px;">Active Lease</div>
+          <sc-for list="{{ leaseRows }}" as="r" hint-placeholder-count="5">
+            <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--color-neutral-300);font-size:13px;max-width:480px;">
+              <span style="color:var(--color-neutral-700);">{{ r.label }}</span><span style="font-weight:600;">{{ r.value }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <!-- EXIT TAB -->
+      <sc-if value="{{ isExit }}" hint-placeholder-val="{{ false }}">
+        <div style="border:2px solid var(--color-divider);padding:40px;text-align:center;">
+          <i data-lucide="log-out" class="lucide" style="width:32px;height:32px;color:var(--color-neutral-700);margin-bottom:12px;"></i>
+          <div style="font-family:var(--font-heading);font-weight:700;font-size:16px;margin-bottom:6px;">No exit in progress</div>
+          <div style="font-size:13px;color:var(--color-neutral-700);margin-bottom:16px;">Start the guided exit workflow to settle dues, review the deposit, and generate a final statement.</div>
+          <div title="{{ permissionNote }}">
+            <button class="btn btn-primary" disabled="{{ isViewer }}" style="opacity:{{ recordOpacity }};cursor:{{ recordCursor }};margin:0 auto;">Start Tenant Exit</button>
+          </div>
+        </div>
+      </sc-if>
+
+    </main>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;role&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;default&quot;: &quot;Org Administrator&quot;, &quot;options&quot;: [&quot;Org Administrator&quot;, &quot;Viewer&quot;], &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Permissions&quot;}}">
+class Component extends DCLogic {
+  state = { activeTab: 'overview' };
+  componentDidMount() { this.iconTimer = setInterval(() => { if (window.lucide) { window.lucide.createIcons(); clearInterval(this.iconTimer); } }, 50); }
+  componentDidUpdate() { if (window.lucide) window.lucide.createIcons(); }
+  componentWillUnmount() { clearInterval(this.iconTimer); }
+
+  renderVals() {
+    const role = this.props.role ?? 'Org Administrator';
+    const isViewer = role === 'Viewer';
+    const active = this.state.activeTab;
+
+    const navItems = [
+      { icon: 'layout-dashboard', label: 'Dashboard' },
+      { icon: 'building-2', label: 'Properties' },
+      { icon: 'users', label: 'Tenants', active: true },
+      { icon: 'file-signature', label: 'Leases' },
+      { icon: 'receipt', label: 'Billing' },
+      { icon: 'credit-card', label: 'Payments' },
+    ].map(i => ({ ...i, active_color: i.active ? '#f3f2f2' : 'var(--color-text)', active_bg: i.active ? 'var(--color-text)' : 'transparent' }));
+
+    const tabDefs = [
+      ['overview', 'Overview'], ['lease', 'Lease'], ['bills', 'Bills'], ['payments', 'Payments'],
+      ['ledger', 'Ledger'], ['documents', 'Documents'], ['exit', 'Exit'],
+    ];
+    const tabs = tabDefs.map(([key, label]) => ({
+      label, onClick: () => this.setState({ activeTab: key }),
+      color: active === key ? 'var(--color-text)' : 'var(--color-neutral-700)',
+      border: active === key ? 'var(--color-accent)' : 'transparent',
+    }));
+
+    const tagFor = (status) => ({
+      'Paid': { tag_class: 'tag-neutral', icon: 'check' },
+      'Partially Paid': { tag_class: 'tag-outline', icon: 'circle-dot' },
+      'Outstanding': { tag_class: 'tag-outline', icon: 'circle' },
+      'Overdue': { tag_class: 'tag-accent', icon: 'alert-triangle' },
+      'Reversed': { tag_class: 'tag-outline', icon: 'undo-2' },
+    }[status] || { tag_class: 'tag-outline', icon: 'circle' });
+
+    const bills = [
+      { number: 'INV-2208', period: 'Aug 2026', total: '₹32,000', paid: '₹32,000', outstanding: '₹0', status: 'Paid' },
+      { number: 'INV-2207', period: 'Jul 2026', total: '₹32,000', paid: '₹32,000', outstanding: '₹0', status: 'Paid' },
+      { number: 'INV-2206', period: 'Jun 2026', total: '₹32,000', paid: '₹15,000', outstanding: '₹17,000', status: 'Partially Paid' },
+      { number: 'INV-2205', period: 'May 2026', total: '₹31,500', paid: '₹31,500', outstanding: '₹0', status: 'Paid' },
+      { number: 'INV-2204', period: 'Apr 2026', total: '₹31,500', paid: '₹0', outstanding: '₹31,500', status: 'Overdue' },
+    ].map(b => ({ ...b, ...tagFor(b.status) }));
+
+    const payments = [
+      { date: '15/08/2026', method: 'UPI', reference: 'UPI2208A', amount: '₹32,000', status: 'Paid', tag_class: 'tag-neutral' },
+      { date: '15/07/2026', method: 'Bank Transfer', reference: 'NEFT7712', amount: '₹32,000', status: 'Paid', tag_class: 'tag-neutral' },
+      { date: '18/06/2026', method: 'Cash', reference: '—', amount: '₹15,000', status: 'Paid', tag_class: 'tag-neutral' },
+      { date: '02/06/2026', method: 'UPI', reference: 'UPI0602', amount: '₹5,000', status: 'Reversed', tag_class: 'tag-outline' },
+    ];
+
+    const ledger = [
+      { date: '15/08/2026', desc: 'Payment received — UPI2208A', debit: '—', credit: '₹32,000', balance: '₹0' },
+      { date: '01/08/2026', desc: 'Bill INV-2208 finalized', debit: '₹32,000', credit: '—', balance: '₹32,000' },
+      { date: '15/07/2026', desc: 'Payment received — NEFT7712', debit: '—', credit: '₹32,000', balance: '₹0' },
+      { date: '01/07/2026', desc: 'Bill INV-2207 finalized', debit: '₹32,000', credit: '—', balance: '₹32,000' },
+      { date: '18/06/2026', desc: 'Payment received — cash', debit: '—', credit: '₹15,000', balance: '₹17,000' },
+      { date: '01/06/2026', desc: 'Bill INV-2206 finalized', debit: '₹32,000', credit: '—', balance: '₹32,000' },
+    ];
+
+    const documents = [
+      { name: 'Lease_Agreement_2025.pdf', meta: 'Lease · uploaded 12/06/2025' },
+      { name: 'Aadhaar_ID.pdf', meta: 'Identity · uploaded 12/06/2025' },
+      { name: 'Move_in_checklist.pdf', meta: 'Property · uploaded 14/06/2025' },
+    ];
+
+    const leaseRows = [
+      { label: 'Property / Unit', value: 'Shanti Nivas · A-302' },
+      { label: 'Lease Start', value: '15/06/2025' },
+      { label: 'Lease End', value: '14/06/2027' },
+      { label: 'Monthly Rent', value: '₹32,000' },
+      { label: 'Billing Cycle', value: 'Monthly, 1st of month' },
+    ];
+
+    const upcomingActions = [
+      { icon: 'alert-triangle', color: 'var(--color-accent-700)', text: 'INV-2204 overdue by 108 days — ₹31,500' },
+      { icon: 'circle-dot', color: 'var(--color-text)', text: 'INV-2206 partially paid — ₹17,000 outstanding' },
+      { icon: 'calendar', color: 'var(--color-text)', text: 'Lease renewal decision needed by 14/04/2027' },
+    ];
+
+    return {
+      isViewer,
+      permissionNote: isViewer ? 'View-only role — action requires Accountant or Admin access' : 'Record a payment for this tenant',
+      recordOpacity: isViewer ? 0.45 : 1,
+      recordCursor: isViewer ? 'not-allowed' : 'pointer',
+      navItems, activeTab: active, tabs,
+      isOverview: active === 'overview', isLease: active === 'lease', isBills: active === 'bills',
+      isPayments: active === 'payments', isLedger: active === 'ledger', isDocuments: active === 'documents',
+      isExit: active === 'exit',
+      tenant: { name: 'Ananya Rao', initials: 'AR', unit: 'Shanti Nivas · A-302', phone: '+91 98200 11234', email: 'ananya.rao@email.com', status: 'Active' },
+      tiles: [
+        { label: 'Current Rent', value: '₹32,000', color: 'var(--color-text)' },
+        { label: 'Outstanding', value: '₹48,500', color: 'var(--color-accent-700)' },
+        { label: 'Available Credit', value: '₹0', color: 'var(--color-text)' },
+        { label: 'Deposit Held', value: '₹64,000', color: 'var(--color-text)' },
+        { label: 'Lease Ends', value: '14/06/2027', color: 'var(--color-text)' },
+      ],
+      leaseRows, upcomingActions, bills, payments, ledger, documents,
+    };
+  }
+}
+
+</script>
+</body>
+</html>

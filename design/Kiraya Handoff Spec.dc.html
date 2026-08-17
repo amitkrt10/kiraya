@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+
+<helmet>
+  <link rel="stylesheet" href="_ds/modernist-770299c4-bef0-4b86-ab27-1dc4c7fc8dab/styles.css">
+  <script src="./doc-page.js"></script>
+  <style>
+    doc-page:not(:defined){visibility:hidden}
+    body{margin:0;}
+    h1,h2,h3{font-family:var(--font-heading);font-weight:700;margin:0;}
+    p,li,td,th{font-family:var(--font-body);}
+    table{width:100%;border-collapse:collapse;font-size:12px;}
+    th,td{border-bottom:1px solid var(--color-neutral-300);padding:6px 8px;text-align:left;vertical-align:top;}
+    th{background:var(--color-neutral-100);font-size:11px;text-transform:uppercase;letter-spacing:0.04em;}
+    .num{text-align:right;font-variant-numeric:tabular-nums;}
+    .tag{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border:1px solid var(--color-neutral-700);}
+    .tag-accent{border-color:var(--color-accent);color:var(--color-accent-700);}
+    .sec{break-inside:avoid;margin:20px 0;}
+    .h2rule{border-bottom:2px solid var(--color-text);padding-bottom:6px;margin-bottom:12px;font-size:20px;}
+    .h3rule{border-bottom:1px solid var(--color-neutral-300);padding-bottom:4px;margin:16px 0 8px;font-size:15px;}
+    .lbl{font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--color-neutral-700);font-weight:700;margin-top:10px;}
+    .open{background:var(--color-neutral-100);border-left:3px solid var(--color-accent);padding:6px 10px;font-size:12px;margin:4px 0;}
+    ul{margin:4px 0 4px 18px;padding:0;font-size:13px;}
+    li{margin-bottom:2px;}
+    p{font-size:13px;line-height:1.5;}
+  </style>
+</helmet>
+
+<doc-page margin="0.7in">
+
+<div class="sec">
+  <div style="font-size:11px;letter-spacing:0.08em;color:var(--color-neutral-700);text-transform:uppercase;">Kiraya — UI/UX Implementation Handoff</div>
+  <h1 style="font-size:34px;margin-top:4px;">Kiraya Product Design Specification</h1>
+  <p style="color:var(--color-neutral-700);">For Claude Code implementation on the existing Supabase backend contract. Modernist design system, approved.</p>
+</div>
+
+<div class="sec">
+  <div class="h2rule">A. Design System Recap</div>
+  <p>Approved and unchanged: Modernist — flat, architectural, near-monochrome ground (<code>#f3f2f2</code> / <code>#201e1d</code>) with a single accent <code>#ec3013</code>, Archivo throughout, Lucide icons, zero corner radius, 2px structural rules, flush-left labels. All new screens extend the Org Dashboard / Platform Admin Dashboard shells — same sidebar, topbar, KPI-strip, table, and tag patterns. No new colors, fonts, or shape language.</p>
+  <div class="lbl">Semantic tag mapping (financial states)</div>
+  <table>
+    <thead><tr><th>State</th><th>Tag style</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td>DRAFT</td><td class="tag tag-outline">tag-outline</td><td>Bill created, not yet finalized — fully editable</td></tr>
+      <tr><td>FINALIZED</td><td class="tag tag-neutral">tag-neutral</td><td>Locked charges, awaiting/receiving payment</td></tr>
+      <tr><td>PAID</td><td class="tag tag-neutral">tag-neutral + check icon</td><td>Outstanding = 0</td></tr>
+      <tr><td>PARTIALLY_PAID</td><td class="tag tag-outline">tag-outline + circle-dot icon</td><td>Some payment allocated, balance remains</td></tr>
+      <tr><td>OUTSTANDING</td><td class="tag tag-outline">tag-outline</td><td>Unpaid, not yet past due date</td></tr>
+      <tr><td>OVERDUE</td><td class="tag tag-accent">tag-accent + alert-triangle</td><td>Unpaid past due date</td></tr>
+      <tr><td>VOID</td><td class="tag tag-neutral">tag-neutral, struck text</td><td>Cancelled — excluded from totals</td></tr>
+      <tr><td>REVERSED</td><td class="tag tag-outline">tag-outline + undo-2 icon</td><td>Payment reversed — allocations undone</td></tr>
+      <tr><td>PENDING</td><td class="tag tag-outline">tag-outline + clock icon</td><td>Awaiting processing (billing run, import)</td></tr>
+    </tbody>
+  </table>
+  <p style="margin-top:6px;">Rule: every status pairs a tag with an icon — never color alone (accessibility). Currency is always ₹ with thousands separators, amounts right-aligned in tables (tabular-nums).</p>
+</div>
+
+<div class="sec">
+  <div class="h2rule">B. Navigation</div>
+  <div class="lbl">Organization shell (left sidebar, grouped)</div>
+  <table>
+    <thead><tr><th>Group</th><th>Items</th></tr></thead>
+    <tbody>
+      <tr><td>—</td><td>Dashboard</td></tr>
+      <tr><td>Portfolio</td><td>Properties · Units · Owners</td></tr>
+      <tr><td>People</td><td>Tenants · Leases</td></tr>
+      <tr><td>Money</td><td>Billing (Runs, Bills, Adjustments) · Payments (Payments, Allocations, Methods) · Ledger · Deposits</td></tr>
+      <tr><td>Operations</td><td>Utilities & Meters (Rates, Meters, Readings) · Tenant Exits · Documents · Imports</td></tr>
+      <tr><td>Insights</td><td>Reports</td></tr>
+      <tr><td>Administration</td><td>Organization Settings · Members · Roles & Permissions (admin-role only)</td></tr>
+    </tbody>
+  </table>
+  <div class="lbl">Platform shell (dark sidebar — visually distinct mode)</div>
+  <p>Platform Dashboard · Organizations (List, Detail, Members, Health) · Platform Reports · Support & Ops · Platform Settings. A persistent "Switch to organization view" link lets an admin drop into any org's normal shell — the sidebar and topbar switch to the light Org shell and show that org's name in the context switcher, with a thin "Platform Admin viewing" banner replacing the org switcher's dropdown affordance.</p>
+  <div class="lbl">Context drilldown</div>
+  <p>Platform → Organization (org detail) → Property (property detail) → Unit (unit detail, shows current tenant) → Tenant (tenant detail). Each hop is a breadcrumb click, never a modal; breadcrumb trail always visible under the topbar page title.</p>
+</div>
+
+<div class="sec">
+  <div class="h2rule">C. Role / Permission Matrix</div>
+  <table>
+    <thead><tr><th>Capability</th><th>Viewer</th><th>Operational</th><th>Manager</th><th>Accountant</th><th>Org Admin</th><th>Platform Admin</th></tr></thead>
+    <tbody>
+      <tr><td>View records, dashboards, reports</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓ (all orgs)</td></tr>
+      <tr><td>Create/edit properties, units, tenants, leases</td><td>—</td><td>✓</td><td>✓</td><td>—</td><td>✓</td><td>—</td></tr>
+      <tr><td>Enter meter readings, upload documents</td><td>—</td><td>✓</td><td>✓</td><td>—</td><td>✓</td><td>—</td></tr>
+      <tr><td>Run billing, finalize/void bills</td><td>—</td><td>—</td><td>✓</td><td>✓</td><td>✓</td><td>—</td></tr>
+      <tr><td>Record/allocate/reverse payments, apply credit</td><td>—</td><td>—</td><td>—</td><td>✓</td><td>✓</td><td>—</td></tr>
+      <tr><td>Refund deposits, complete tenant exit</td><td>—</td><td>—</td><td>—</td><td>✓</td><td>✓</td><td>—</td></tr>
+      <tr><td>Manage members, roles, org settings</td><td>—</td><td>—</td><td>—</td><td>—</td><td>✓</td><td>✓ (own org context)</td></tr>
+      <tr><td>Manage organizations platform-wide</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>✓</td></tr>
+    </tbody>
+  </table>
+  <div class="lbl">UI behavior by permission level</div>
+  <ul>
+    <li><b>No access</b> — nav item and route hidden entirely (not disabled), unless landing there directly renders a "You don't have access to this area" page explaining who to ask.</li>
+    <li><b>View-only</b> — action buttons render visibly but disabled, with a tooltip explaining why ("Requires Accountant or Admin role"); a persistent page banner states the view-only condition once (see Org Dashboard's banner).</li>
+    <li><b>Edit</b> — full CRUD on that entity; financial actions (payments, void, reversal) still gated separately.</li>
+    <li><b>Admin/Financial</b> — unlocks destructive + monetary actions, always behind explicit confirmation (Section F).</li>
+  </ul>
+  <p>Frontend gating is UX only — Supabase RLS is the actual security boundary; the UI must degrade gracefully (disabled, not silently broken) if a call is rejected server-side.</p>
+</div>
+
+<div class="sec">
+  <div class="h2rule">D. Screen Inventory</div>
+  <table>
+    <thead><tr><th>Area</th><th>Screens</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>Dashboards</td><td>Org Dashboard, Platform Admin Dashboard</td><td>Built ✓</td></tr>
+      <tr><td>Properties</td><td>List, Detail (workspace), Create/Edit drawer</td><td>Detail built ✓; List/Create — spec below</td></tr>
+      <tr><td>Units</td><td>List (nested in Property), Detail, Create/Edit</td><td>Spec only</td></tr>
+      <tr><td>Owners</td><td>List, Detail (portfolio), Create/Edit</td><td>Spec only</td></tr>
+      <tr><td>Tenants</td><td>List, Detail (workspace w/ tabs), Create/Edit</td><td>Detail built ✓; List/Create — spec below</td></tr>
+      <tr><td>Leases</td><td>List, Detail, Create, Expiry view (in Dashboard + Reports)</td><td>Spec only</td></tr>
+      <tr><td>Billing</td><td>Billing Dashboard, Runs List/Detail, Bill List, Bill Detail, Adjustment form, Finalize/Void confirmations</td><td>Bill Detail built ✓; rest — spec below</td></tr>
+      <tr><td>Payments</td><td>List, Detail, Record Payment (drawer), Allocation view, Reversal confirmation, Methods settings</td><td>Spec below</td></tr>
+      <tr><td>Ledger</td><td>Org-wide Ledger, embedded Tenant Ledger tab</td><td>Spec below (Tenant Ledger tab built ✓ in Tenant Detail)</td></tr>
+      <tr><td>Deposits</td><td>Overview, Detail, Transactions, Refund workflow (part of Tenant Exit)</td><td>Spec below</td></tr>
+      <tr><td>Tenant Exit</td><td>Exit List, 9-step guided workflow, Final Statement</td><td>Spec below</td></tr>
+      <tr><td>Utilities/Meters</td><td>Utility List/Config/Rates, Meter List/Detail, Reading Entry, Consumption history</td><td>Spec below</td></tr>
+      <tr><td>Documents</td><td>List (contextual + org-wide), Upload, Preview</td><td>Spec below</td></tr>
+      <tr><td>Imports</td><td>Import List, Upload, Processing, Result (success/partial/errors)</td><td>Spec below</td></tr>
+      <tr><td>Reports</td><td>Reporting Center landing + 12 report views</td><td>Spec below</td></tr>
+      <tr><td>Administration</td><td>Org Settings, Members List/Detail, Roles & Permissions</td><td>Spec below</td></tr>
+      <tr><td>Platform</td><td>Organization List/Detail/Members/Health</td><td>Spec below</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="sec" style="break-before:page;">
+  <div class="h2rule">E. Screen Specifications — Built Screens</div>
+
+  <div class="h3rule">Organization Dashboard <span style="float:right;" class="tag tag-neutral">BUILT</span></div>
+  <p><b>Purpose:</b> single-glance answer to "how is this organization doing today." <b>Access:</b> all org roles (Viewer sees read-only banner). <b>Layout:</b> sidebar + topbar shell; 6-cell KPI strip (Properties, Units, Occupancy, Tenants, Outstanding, Collected); 2-column body — Collection Performance chart + Recent Payments table (left, 2fr), Pending Actions + Lease Expiries (right, 1fr); full-width Billing Status strip. <b>Primary actions:</b> Record Payment (topbar, permission-gated). <b>Empty state:</b> KPI strip still renders with zeros; Recent Payments/Pending Actions show "Nothing here yet" row. <b>Mobile:</b> KPI strip becomes 2-column scropóll grid; two-column body stacks to single column, chart before table.</p>
+
+  <div class="h3rule">Platform Admin Dashboard <span style="float:right;" class="tag tag-neutral">BUILT</span></div>
+  <p><b>Purpose:</b> cross-organization health at a glance. <b>Access:</b> Platform Admin only. <b>Layout:</b> dark sidebar (visually distinct mode); KPI strip (Organizations, Active, Properties, Units, Outstanding, Collected); Operational Alerts strip; Organization Health table (sortable, links into org context); Platform Collections chart. <b>Primary actions:</b> row click → Organization Detail. <b>Empty:</b> n/a (platform always has ≥1 org in practice — if zero, show "No organizations yet · Add organization" CTA).</p>
+
+  <div class="h3rule">Tenant Detail <span style="float:right;" class="tag tag-neutral">BUILT</span></div>
+  <p><b>Purpose:</b> the tenant's single source of truth — who/where/lease/owed/paid/credit/documents in one workspace. <b>Layout:</b> header band (name, unit/property, status tag, contact) + 5 summary tiles (Current Rent, Outstanding, Available Credit, Deposit Held, Lease Ends) + tabs: Overview, Lease, Bills, Payments, Ledger, Documents, Exit. <b>Permissions:</b> Viewer sees all tabs read-only; Accountant sees payment/credit actions; Exit tab only actionable by Accountant/Admin. <b>Empty:</b> new tenant with no lease shows "No active lease — Create Lease" in Lease tab; Bills/Payments tabs show "No bills yet" until first billing run.</p>
+
+  <div class="h3rule">Property Detail <span style="float:right;" class="tag tag-neutral">BUILT</span></div>
+  <p><b>Purpose:</b> operational workspace for one property. <b>Layout:</b> header (name, address, owner chip) + summary tiles (Units, Occupancy, Tenants, Outstanding) + tabs: Overview, Units, Owners, Financials, Documents. Units tab table links to Unit Detail → Tenant Detail. <b>Permissions:</b> edit gated to Operational role and above.</p>
+
+  <div class="h3rule">Bill Detail <span style="float:right;" class="tag tag-neutral">BUILT</span></div>
+  <p><b>Purpose:</b> financially explicit single-bill view. <b>Layout:</b> header (bill #, tenant, property/unit, period, status tag) + charges table + adjustments + total rule + payment summary strip (Paid / Credit Applied / Outstanding) + Payments-against-this-bill table. <b>Actions:</b> Finalize (Draft only), Void (Finalized/unpaid only, strong confirmation), Record Payment shortcut. All gated by Accountant/Admin; Viewer sees numbers only, no action buttons rendered (not just disabled — bill actions carry real financial weight, so they're hidden with a one-line "Financial actions require Accountant access" note instead of a disabled button row).</p>
+</div>
+
+<div class="sec">
+  <div class="h2rule">F. Financial Confirmation Pattern</div>
+  <p>Every financially destructive or irreversible action uses the same dialog structure (Modernist <code>.dialog</code>, no rounded corners, 2px border):</p>
+  <ul>
+    <li><b>Title</b> states the action in plain verbs: "Void Bill #INV-2201", "Reverse Payment of ₹18,500", "Refund Security Deposit".</li>
+    <li><b>Affected</b> line: tenant/property/unit named explicitly.</li>
+    <li><b>Amount</b> shown large, tabular-nums, with before/after where relevant (e.g. "Outstanding will change from ₹0 to ₹18,500").</li>
+    <li><b>Reversibility</b> stated in one line: "This cannot be undone" or "This creates a reversal — original record is preserved for audit."</li>
+    <li><b>Confirm</b> button is accent-filled and restates the verb ("Void Bill", never generic "Confirm"); Cancel is <code>.btn-secondary</code>, listed first (left) so Cancel is the default visual weight.</li>
+    <li>For amounts ≥ a configurable threshold (OPEN PRODUCT DECISION — no such threshold exists in the backend today), consider requiring the user to type the amount to confirm — flagged as optional hardening, not required for v1.</li>
+  </ul>
+  <p>Applies to: Finalize Bill, Void Bill, Record Payment, Allocate Payment, Apply Credit, Reverse Payment, Reverse Allocation, Refund Deposit, Complete Tenant Exit, remove Member, delete Property/Unit/Owner records with dependent data.</p>
+</div>
+
+<div class="sec">
+  <div class="h2rule">G. Key Screen Specs — Remaining Areas</div>
+
+  <div class="h3rule">Properties / Tenants / Owners / Leases — List screens</div>
+  <p><b>Layout:</b> topbar with page title + primary "+ Add" action (permission-gated) + filter row (property, status, search) + Modernist table. <b>Columns</b> — Properties: Name, Address, Owner, Units, Occupancy, Outstanding (right-aligned). Tenants: Name, Unit/Property, Lease status, Outstanding, Last Payment. Leases: Tenant, Unit, Start, End (with expiry tag if <30 days), Rent, Status. <b>Row action:</b> click → detail; overflow menu for Edit/Archive. <b>Pagination:</b> 25/page, standard Modernist pagination component. <b>Empty:</b> icon + "No properties yet" + one-line explanation + primary CTA. <b>Loading:</b> skeleton rows (5), header stays static.</p>
+
+  <div class="h3rule">Create/Edit forms (Property, Unit, Owner, Tenant, Lease)</div>
+  <p>Right-side drawer (not full page, not modal) for single-entity CRUD — keeps list context visible. Sectioned fields (Identity → Location/Ownership → Financial defaults). Required fields marked with a small dot, not asterisk-in-red (accent reserved for status/errors). Inline validation on blur; submit disabled until valid; success closes drawer and highlights the new/updated row briefly (background flash, not a toast alone). Lease creation is a 2-step drawer: Party & Unit → Terms & Billing Config, because rent/billing setup materially changes downstream billing runs.</p>
+
+  <div class="h3rule">Billing Dashboard & Billing Runs</div>
+  <p><b>Billing Dashboard:</b> KPI tiles (Bills this cycle by status, per Section A tag table) + "Run Billing" primary action + Runs table (Period, Scope, Tenants, Bills Generated, Status, Started by). <b>Run detail:</b> Review step shows scope (properties/units count, tenant count) before running; Processing shows a progress state (inline, not full-page spinner); Completed shows a summary (Generated / Skipped / Failed) with drill-down into any failures, each with a specific reason (never a raw DB error) — e.g. "Skipped: Unit B-104 has no active lease."</p>
+
+  <div class="h3rule">Payments — List / Detail / Record / Reversal</div>
+  <p><b>List:</b> Tenant, Method, Amount, Date, Status (Paid/Reversed), Allocated vs Unapplied indicator. <b>Record Payment</b> (drawer): Tenant search → Amount → Method → Reference → auto-suggested allocation against oldest outstanding bills (editable) → remaining amount becomes Available Credit if any. <b>Detail:</b> amount, method, date, reference, full Allocations table (Bill, Amount Applied), Available Credit line if unapplied remainder exists, Reverse action (Accountant/Admin, full confirmation per Section F — shows each allocation that will be undone).</p>
+
+  <div class="h3rule">Available Credit</div>
+  <p>Always labeled "Available Credit: ₹X" — never a negative balance. Shown on Tenant header tile, Payment detail, and as an "Apply Credit" action inside Bill Detail when a tenant has both an outstanding bill and available credit. Applying credit reuses the confirmation pattern (Section F): states which bill(s) it will offset and the resulting outstanding.</p>
+
+  <div class="h3rule">Ledger (org-wide + tenant tab)</div>
+  <p>Chronological table: Date, Description, Reference, Debit, Credit, Running Balance — Debit/Credit in separate right-aligned columns (never a single signed column) so the sign is never ambiguous. Filters: date range, property, tenant, entry type. Export button (CSV) top-right. Tenant Ledger tab is the same table scoped to one tenant, embedded without its own page chrome.</p>
+
+  <div class="h3rule">Security Deposits</div>
+  <p><b>Overview:</b> per-tenant Deposit Held, with a Transactions sub-table (Received, Deduction, Refund entries chronologically). <b>Refund</b> is only reachable through the Tenant Exit workflow (Section H) — not as a standalone button — because a refund amount depends on the settlement calculation, avoiding a route to refund a deposit outside that reviewed context.</p>
+
+  <div class="h3rule">Utilities & Meters</div>
+  <p><b>Utility config/rates:</b> simple table (Utility, Rate, Unit, Effective From). <b>Meter Reading Entry:</b> optimized for repeat data entry — single-column form per meter showing Previous Reading and Previous Date read-only beside the New Reading input, live-computed Consumption, inline range-validation ("this is 40× the prior reading — confirm?") rather than blocking. <b>Consumption history:</b> small line chart + table per meter.</p>
+
+  <div class="h3rule">Documents</div>
+  <p>Contextual document lists embedded in Property/Unit/Tenant/Lease detail (Documents tab) plus one org-wide Documents screen with an Entity-type filter. Upload via drag-drop zone; each row shows filename, type tag, linked entity, uploaded-by, date; preview opens in a side panel for PDFs/images, download for other types. Delete requires Admin and a lightweight confirmation (non-financial, so a single-step confirm suffices).</p>
+
+  <div class="h3rule">Imports</div>
+  <p>Upload → Validation (shows row-level preview before committing) → Processing (inline progress) → Result: Success / Partial Success / Failed, each listing a table of Row, Field, Error, Suggested Correction — plain-language errors only, e.g. "Row 14: Unit code 'B-1O4' not found — did you mean 'B-104'?" Users can download a corrected-rows-only CSV to re-upload.</p>
+
+  <div class="h3rule">Reports</div>
+  <p>Reporting Center landing: category tiles (Financial, Occupancy, Tenant, Owner) → each opens a report view sharing one layout — filter bar (date range, property, tenant/owner/unit, status) + summary tiles + table/chart + Export. 12 reports from the brief (Tenant Outstanding, Occupancy, Meter Consumption, Tenant Milestones, Lease Expiry, Owner Portfolio, Exit Statement, Tenant Dues, Tenant Ledger, Tenant Bill Summary, Collection Performance, Collection by Payment Method) all reuse this shell — no bespoke layouts.</p>
+
+  <div class="h3rule">Administration & Platform Organizations</div>
+  <p><b>Org Settings:</b> single settings page, sectioned (Identity, Billing defaults, Locale/currency). <b>Members:</b> table (Name, Role, Status, Last Activity) + invite drawer + role change via inline select with confirmation if downgrading own/other admin access. <b>Platform Organizations:</b> same List/Detail/Members pattern as an org's own Members screen, plus a Health tab (the KPI/table combination already on the Platform Dashboard, scoped to one org) and a "View as this organization" action that hands off into the Org shell.</p>
+</div>
+
+<div class="sec" style="break-before:page;">
+  <div class="h2rule">H. Financial Workflows — Detail</div>
+
+  <div class="h3rule">Tenant Exit (9-step guided workflow)</div>
+  <p>Full-page wizard (not a drawer — too consequential), left-side numbered step rail, each step reachable only after the prior is complete:</p>
+  <ul>
+    <li>01 Exit Initiation — select tenant/lease, proposed exit date</li>
+    <li>02 Tenant/Lease Review — confirms the lease being closed, read-only recap</li>
+    <li>03 Outstanding Dues — all unpaid bills for this tenant, itemized</li>
+    <li>04 Deposit Review — deposit held, transaction history</li>
+    <li>05 Adjustments — any final charges/credits added for this exit</li>
+    <li>06 Settlement — computed net: Outstanding Dues − Deposit Held ± Adjustments</li>
+    <li>07 Final Statement — printable/exportable summary tenant receives</li>
+    <li>08 Refund / Amount Payable — clearly labeled direction (refund to tenant vs. amount tenant still owes), never a signed number alone</li>
+    <li>09 Completion — confirmation dialog (Section F pattern) → lease closed, unit set to Vacant, deposit transactions posted</li>
+  </ul>
+  <p>Example settlement block: Outstanding dues ₹25,000 · Deposit held ₹50,000 · Deductions ₹10,000 · <b>Refund due ₹15,000</b>. Fields shown must match the backend's actual settlement columns — exact field list is an OPEN PRODUCT DECISION pending schema confirmation for "Adjustments."</p>
+
+  <div class="h3rule">Record Payment → Allocation</div>
+  <p>Entry: Payments list "+ Record Payment" or Tenant Detail → Payments tab. Intent: log money received and apply it. Step 1 select/search tenant. Step 2 enter amount, method, date, reference. Step 3 system proposes allocation oldest-bill-first; user can adjust per-bill amounts. Validation: sum of allocations cannot exceed payment amount; remainder becomes Available Credit automatically. Success: payment + allocations created, affected bills' status updates live. Failure: inline error, amounts preserved. Edge case: payment exceeds all outstanding — full amount becomes credit, no allocation required.</p>
+
+  <div class="h3rule">Reverse Payment</div>
+  <p>Entry: Payment Detail → Reverse. Intent: undo a payment recorded in error. Step 1 confirmation dialog (Section F) listing every allocation that will be undone and the resulting outstanding on each affected bill. Step 2 confirm → original payment marked Reversed (preserved, not deleted), allocations undone, bill statuses revert. Failure: blocked with explanation if downstream state prevents it (e.g. tenant already exited) — OPEN PRODUCT DECISION on exact blocking rules pending backend confirmation.</p>
+
+  <div class="h3rule">Finalize / Void Bill</div>
+  <p>Finalize: Draft → Finalized, locks charges from further edits, becomes payable. Simple confirm (non-monetary-reversal risk, lighter dialog). Void: only available pre-payment; Section F full dialog stating the bill amount and that it's excluded from all totals/reports once voided, with reason field required for audit.</p>
+</div>
+
+<div class="sec">
+  <div class="h2rule">I. Cross-Cutting Patterns</div>
+  <table>
+    <thead><tr><th>Pattern</th><th>Rule</th></tr></thead>
+    <tbody>
+      <tr><td>Tables</td><td>Sticky header, right-align numeric/currency columns, status via tag+icon, row click = detail, overflow (⋯) menu for secondary row actions, skeleton-row loading, standard pagination footer.</td></tr>
+      <tr><td>Forms</td><td>Right-drawer for single-entity CRUD, full-page wizard only for multi-step financial workflows (Tenant Exit, Billing Run review). Inline validation on blur, never on every keystroke.</td></tr>
+      <tr><td>Loading</td><td>Skeleton for tables/cards, inline spinner inside buttons during submit, section-level skeleton for dashboard tiles. No full-page spinners after initial shell load.</td></tr>
+      <tr><td>Empty states</td><td>Icon + one-line "what this is" + one-line "why it matters" + primary CTA where the user has permission to create; Viewer sees the same copy minus the CTA.</td></tr>
+      <tr><td>Errors</td><td>Form errors inline under the field; section errors as a boxed banner with Retry; permission errors as a static explanatory page, never a silent 403; all copy in plain language, never raw Postgres/Supabase text.</td></tr>
+      <tr><td>Notifications</td><td>Toast, bottom-right, 4 variants (success/warning/error/info) matching Section A tag colors; financial-action toasts persist until dismissed (not auto-timeout) — e.g. "Payment reversal completed."</td></tr>
+      <tr><td>Search</td><td>Contextual search per list screen (property/tenant/etc. name) by default; a single global search (topbar) covers tenants, bills, and units by number/name — no separate global search UI beyond that input.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="sec">
+  <div class="h2rule">J. Responsive Rules</div>
+  <p><b>Desktop (≥1280px):</b> full sidebar + multi-column layouts, primary operational surface. <b>Tablet (768–1279px):</b> sidebar collapses to icon rail (expandable on hover/tap), KPI strips wrap to 3 columns, two-column detail bodies stack. <b>Mobile (&lt;768px):</b> sidebar becomes a bottom-sheet/hamburger drawer; dashboards, tenant summaries, payments, and approvals remain fully usable; wide operational tables (Ledger, Billing Runs, Imports) switch to a stacked card-per-row layout with the same fields, not a horizontal scroll. Financially destructive actions keep the same confirmation dialog full-screen on mobile.</p>
+</div>
+
+<div class="sec">
+  <div class="h2rule">K. Accessibility</div>
+  <ul>
+    <li>All status communicated by tag + icon, never color alone (Section A).</li>
+    <li>Every interactive element has a visible <code>:focus-visible</code> accent outline (Modernist default) — never suppressed.</li>
+    <li>Dialogs trap focus, return focus to the trigger on close, and are dismissible via Escape.</li>
+    <li>Tables use real <code>&lt;th&gt;</code>/scope semantics; icon-only buttons carry <code>aria-label</code>.</li>
+    <li>Disabled action buttons carry an explanatory <code>title</code>/tooltip, not just a lowered opacity.</li>
+    <li>Text contrast: body copy never rendered in raw accent red (use <code>--color-accent-700</code>) per design system guidance.</li>
+  </ul>
+</div>
+
+<div class="sec">
+  <div class="h2rule">L. Open Product Decisions</div>
+  <div class="open">Late-fee behavior — automatic vs. manual adjustment. Not defined in backend audit scope.</div>
+  <div class="open">Notification/reminder cadence for overdue bills and lease expiries — no scheduling model confirmed.</div>
+  <div class="open">Approval workflow before finalizing a bill or completing a tenant exit (single-actor vs. maker-checker) — not present in current backend.</div>
+  <div class="open">Threshold for requiring "type to confirm" on large reversals/refunds — no such rule exists today.</div>
+  <div class="open">Exact Tenant Exit "Adjustments" field set — pending confirmation against the actual settlement schema.</div>
+  <div class="open">External payment gateway / WhatsApp / tenant self-service portal — explicitly out of scope unless the backend gains support.</div>
+  <div class="open">Saved/reusable filter presets on report and list screens — no persistence model confirmed yet.</div>
+</div>
+
+<div class="sec">
+  <div class="h2rule">M. Recommended Implementation Order</div>
+  <ol style="font-size:13px;padding-left:20px;">
+    <li>Application shell (sidebar, topbar, org switcher, permission plumbing) + Org Dashboard, Platform Admin Dashboard — reuse built screens as-is.</li>
+    <li>Properties → Units → Owners (read paths first, then create/edit drawers).</li>
+    <li>Tenants → Leases (read paths, then create/edit) — reuse built Tenant Detail.</li>
+    <li>Billing: Bill list/detail (reuse built Bill Detail) → Billing Runs → Finalize/Void.</li>
+    <li>Payments: record → allocate → detail → reversal.</li>
+    <li>Ledger (org + tenant tab), Available Credit surfaces.</li>
+    <li>Security Deposits + Tenant Exit workflow (depends on 4–6 being live).</li>
+    <li>Utilities/Meters, Documents, Imports.</li>
+    <li>Reports (built last — depends on every other data surface existing).</li>
+    <li>Administration (Members/Roles) + Platform Organizations views.</li>
+  </ol>
+</div>
+
+</doc-page>
+
+</x-dc>
+</body>
+</html>

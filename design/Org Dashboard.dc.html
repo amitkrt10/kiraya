@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+
+<helmet>
+  <link rel="stylesheet" href="_ds/modernist-770299c4-bef0-4b86-ab27-1dc4c7fc8dab/styles.css">
+  <script src="_ds/modernist-770299c4-bef0-4b86-ab27-1dc4c7fc8dab/_ds_bundle.js"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <style>
+    body{margin:0;background:var(--color-bg);color:var(--color-text);font-family:var(--font-body);}
+    a{color:var(--color-accent-700);text-decoration:none;}
+    a:hover{color:var(--color-accent);text-decoration:underline;}
+    ::-webkit-scrollbar{width:10px;height:10px;}
+    ::-webkit-scrollbar-thumb{background:var(--color-neutral-300);}
+    .lucide{width:16px;height:16px;stroke-width:2;vertical-align:middle;}
+  </style>
+</helmet>
+
+<div style="display:flex;min-height:100vh;">
+
+  <!-- SIDEBAR -->
+  <aside style="width:248px;flex:0 0 248px;border-right:2px solid var(--color-divider);display:flex;flex-direction:column;background:var(--color-bg);">
+    <div style="padding:20px 20px;border-bottom:2px solid var(--color-divider);display:flex;align-items:center;gap:10px;">
+      <div style="width:28px;height:28px;background:var(--color-text);display:flex;align-items:center;justify-content:center;">
+        <span style="color:var(--color-bg);font-family:var(--font-heading);font-weight:700;font-size:15px;">K</span>
+      </div>
+      <span style="font-family:var(--font-heading);font-weight:700;font-size:18px;letter-spacing:0.02em;">KIRAYA</span>
+    </div>
+
+    <div style="padding:14px 20px;border-bottom:2px solid var(--color-divider);">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:var(--color-neutral-700);margin-bottom:6px;">Organization</div>
+      <button style="width:100%;display:flex;align-items:center;justify-content:space-between;background:none;border:2px solid var(--color-divider);padding:8px 10px;font-family:var(--font-body);font-size:14px;font-weight:600;cursor:pointer;color:var(--color-text);">
+        <span>Sundaram Estates</span>
+        <i data-lucide="chevrons-up-down" class="lucide"></i>
+      </button>
+    </div>
+
+    <nav style="flex:1;overflow-y:auto;padding:14px 12px;display:flex;flex-direction:column;gap:2px;">
+      <sc-for list="{{ navGroups }}" as="group" hint-placeholder-count="8">
+        <div style="margin-top:14px;" data-first-no-margin="true">
+          <sc-if value="{{ group.label }}">
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:var(--color-neutral-700);padding:0 10px 6px;">{{ group.label }}</div>
+          </sc-if>
+          <sc-for list="{{ group.items }}" as="item" hint-placeholder-count="2">
+            <a href="#" style="display:flex;align-items:center;gap:10px;padding:8px 10px;font-size:14px;font-weight:600;color:{{ item.active_color }};background:{{ item.active_bg }};text-decoration:none;">
+              <i data-lucide="{{ item.icon }}" class="lucide"></i>
+              <span>{{ item.label }}</span>
+            </a>
+          </sc-for>
+        </div>
+      </sc-for>
+    </nav>
+
+    <div style="border-top:2px solid var(--color-divider);padding:14px 20px;">
+      <div style="font-size:11px;color:var(--color-neutral-700);">Signed in as</div>
+      <div style="font-size:13px;font-weight:600;">{{ user.name }} · {{ user.role }}</div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column;">
+
+    <!-- TOPBAR -->
+    <header style="height:64px;flex:0 0 64px;border-bottom:2px solid var(--color-divider);display:flex;align-items:center;justify-content:space-between;padding:0 28px;background:var(--color-bg);">
+      <div>
+        <div style="font-size:12px;color:var(--color-neutral-700);">Sundaram Estates / Dashboard</div>
+        <div style="font-family:var(--font-heading);font-weight:700;font-size:20px;">Dashboard</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <div style="position:relative;">
+          <input class="input" placeholder="Search tenants, bills, units…" style="width:280px;padding:8px 10px 8px 34px;font-size:14px;"/>
+          <i data-lucide="search" class="lucide" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--color-neutral-700);"></i>
+        </div>
+        <button class="btn-icon btn" title="Notifications" style="position:relative;">
+          <i data-lucide="bell" class="lucide"></i>
+          <span style="position:absolute;top:4px;right:4px;width:7px;height:7px;background:var(--color-accent);"></span>
+        </button>
+        <div title="{{ permissionNote }}">
+          <button class="btn btn-primary" disabled="{{ isViewer }}" style="opacity:{{ recordPaymentOpacity }};cursor:{{ recordPaymentCursor }};">
+            <i data-lucide="plus" class="lucide" style="margin-right:6px;"></i>Record Payment
+          </button>
+        </div>
+        <button style="display:flex;align-items:center;gap:8px;background:none;border:2px solid var(--color-divider);padding:6px 10px;cursor:pointer;">
+          <div style="width:24px;height:24px;background:var(--color-neutral-900);color:var(--color-bg);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">{{ user.initials }}</div>
+          <i data-lucide="chevron-down" class="lucide"></i>
+        </button>
+      </div>
+    </header>
+
+    <sc-if value="{{ isViewer }}" hint-placeholder-val="{{ false }}">
+      <div style="background:var(--color-neutral-100);border-bottom:2px solid var(--color-divider);padding:8px 28px;font-size:13px;display:flex;align-items:center;gap:8px;">
+        <i data-lucide="eye" class="lucide"></i>
+        View-only role — you can see all figures below but cannot record payments, finalize bills, or edit records.
+      </div>
+    </sc-if>
+
+    <main style="flex:1;padding:28px;overflow-y:auto;">
+
+      <!-- KPI STRIP -->
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);border:2px solid var(--color-divider);margin-bottom:28px;">
+        <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="6">
+          <div style="padding:16px 18px;border-right:2px solid var(--color-divider);" data-last-no-border="true">
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--color-neutral-700);margin-bottom:8px;">{{ k.label }}</div>
+            <div style="font-family:var(--font-heading);font-weight:700;font-size:26px;line-height:1;">{{ k.value }}</div>
+            <div style="font-size:12px;margin-top:8px;color:{{ k.delta_color }};">{{ k.delta }}</div>
+          </div>
+        </sc-for>
+      </div>
+
+      <!-- TWO COLUMN -->
+      <div style="display:grid;grid-template-columns:2fr 1fr;gap:0;border:2px solid var(--color-divider);margin-bottom:28px;">
+        <div style="border-right:2px solid var(--color-divider);padding:20px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+            <div style="font-family:var(--font-heading);font-weight:700;font-size:16px;">Collection Performance</div>
+            <div style="font-size:12px;color:var(--color-neutral-700);">Last 6 months</div>
+          </div>
+          <div style="display:flex;align-items:flex-end;gap:16px;height:160px;border-bottom:2px solid var(--color-divider);padding-bottom:0;">
+            <sc-for list="{{ collectionBars }}" as="b" hint-placeholder-count="6">
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px;">
+                <div style="font-size:11px;color:var(--color-neutral-700);">{{ b.pct }}</div>
+                <div style="width:100%;position:relative;height:{{ b.max_h }}px;background:var(--color-neutral-100);">
+                  <div style="position:absolute;bottom:0;left:0;right:0;height:{{ b.h }}px;background:var(--color-accent);"></div>
+                </div>
+                <div style="font-size:11px;color:var(--color-neutral-700);margin-top:6px;">{{ b.month }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex;gap:20px;margin-top:14px;font-size:12px;color:var(--color-neutral-700);">
+            <div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;background:var(--color-accent);display:inline-block;"></span>Collected vs billed</div>
+          </div>
+
+          <div style="font-family:var(--font-heading);font-weight:700;font-size:16px;margin:24px 0 12px;">Recent Payments</div>
+          <table class="table" style="width:100%;">
+            <thead>
+              <tr>
+                <th>Tenant</th><th>Property / Unit</th><th>Method</th><th style="text-align:right;">Amount</th><th>Date</th><th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{ recentPayments }}" as="p" hint-placeholder-count="5">
+                <tr>
+                  <td style="font-weight:600;"><a href="#">{{ p.tenant }}</a></td>
+                  <td style="color:var(--color-neutral-700);">{{ p.unit }}</td>
+                  <td>{{ p.method }}</td>
+                  <td style="text-align:right;font-variant-numeric:tabular-nums;">{{ p.amount }}</td>
+                  <td style="color:var(--color-neutral-700);">{{ p.date }}</td>
+                  <td>
+                    <span class="tag {{ p.tag_class }}"><i data-lucide="{{ p.icon }}" class="lucide" style="width:12px;height:12px;margin-right:4px;"></i>{{ p.status }}</span>
+                  </td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="padding:20px;">
+          <div style="font-family:var(--font-heading);font-weight:700;font-size:16px;margin-bottom:14px;">Pending Actions</div>
+          <div style="display:flex;flex-direction:column;gap:0;border-top:2px solid var(--color-divider);">
+            <sc-for list="{{ pendingActions }}" as="a" hint-placeholder-count="4">
+              <a href="#" style="display:flex;align-items:flex-start;gap:10px;padding:12px 0;border-bottom:2px solid var(--color-divider);text-decoration:none;color:var(--color-text);">
+                <i data-lucide="{{ a.icon }}" class="lucide" style="margin-top:2px;flex:0 0 auto;color:{{ a.icon_color }};"></i>
+                <div>
+                  <div style="font-size:13px;font-weight:600;">{{ a.title }}</div>
+                  <div style="font-size:12px;color:var(--color-neutral-700);margin-top:2px;">{{ a.subtitle }}</div>
+                </div>
+              </a>
+            </sc-for>
+          </div>
+
+          <div style="font-family:var(--font-heading);font-weight:700;font-size:16px;margin:24px 0 14px;">Lease Expiries</div>
+          <div style="display:flex;flex-direction:column;border-top:2px solid var(--color-divider);">
+            <sc-for list="{{ leaseExpiries }}" as="l" hint-placeholder-count="3">
+              <a href="#" style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:2px solid var(--color-divider);text-decoration:none;color:var(--color-text);">
+                <div>
+                  <div style="font-size:13px;font-weight:600;">{{ l.tenant }}</div>
+                  <div style="font-size:12px;color:var(--color-neutral-700);">{{ l.unit }}</div>
+                </div>
+                <span class="tag {{ l.tag_class }}">{{ l.days_label }}</span>
+              </a>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+
+      <!-- BILLING STATUS -->
+      <div style="border:2px solid var(--color-divider);padding:20px;">
+        <div style="font-family:var(--font-heading);font-weight:700;font-size:16px;margin-bottom:16px;">Billing Status — This Cycle</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <sc-for list="{{ billingStatuses }}" as="s" hint-placeholder-count="6">
+            <div style="display:flex;align-items:center;gap:10px;border:2px solid var(--color-divider);padding:10px 14px;">
+              <i data-lucide="{{ s.icon }}" class="lucide" style="color:{{ s.icon_color }};"></i>
+              <div>
+                <div style="font-size:18px;font-weight:700;font-family:var(--font-heading);line-height:1;">{{ s.count }}</div>
+                <div style="font-size:11px;color:var(--color-neutral-700);text-transform:uppercase;letter-spacing:0.04em;margin-top:4px;">{{ s.label }}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;role&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;default&quot;: &quot;Org Administrator&quot;, &quot;options&quot;: [&quot;Org Administrator&quot;, &quot;Viewer&quot;], &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Permissions&quot;}}">
+class Component extends DCLogic {
+  componentDidMount() {
+    this.iconTimer = setInterval(() => { if (window.lucide) { window.lucide.createIcons(); clearInterval(this.iconTimer); } }, 50);
+  }
+  componentDidUpdate() { if (window.lucide) window.lucide.createIcons(); }
+  componentWillUnmount() { clearInterval(this.iconTimer); }
+
+  renderVals() {
+    const role = this.props.role ?? 'Org Administrator';
+    const isViewer = role === 'Viewer';
+
+    const activeItem = (label) => ({ label, active: true });
+    const navGroups = [
+      { label: null, items: [ item('layout-dashboard', 'Dashboard', true) ] },
+      { label: 'Portfolio', items: [
+        item('building-2', 'Properties'), item('door-open', 'Units'), item('user-round', 'Owners')
+      ]},
+      { label: 'People', items: [ item('users', 'Tenants'), item('file-signature', 'Leases') ] },
+      { label: 'Money', items: [
+        item('receipt', 'Billing'), item('credit-card', 'Payments'), item('scroll-text', 'Ledger'), item('shield', 'Deposits')
+      ]},
+      { label: 'Operations', items: [
+        item('gauge', 'Utilities & Meters'), item('log-out', 'Tenant Exits'), item('folder', 'Documents'), item('upload', 'Imports')
+      ]},
+      { label: 'Insights', items: [ item('bar-chart-3', 'Reports') ] },
+      { label: role === 'Org Administrator' ? 'Administration' : null,
+        items: role === 'Org Administrator' ? [ item('settings', 'Administration') ] : [] },
+    ].filter(g => g.items.length > 0 || g.label === null);
+
+    function item(icon, label, active) {
+      return {
+        icon, label,
+        active_color: active ? '#f3f2f2' : 'var(--color-text)',
+        active_bg: active ? 'var(--color-text)' : 'transparent'
+      };
+    }
+
+    const tagFor = (status) => {
+      const map = {
+        'Paid': { tag_class: 'tag-neutral', icon: 'check' },
+        'Partially Paid': { tag_class: 'tag-outline', icon: 'circle-dot' },
+        'Pending': { tag_class: 'tag-outline', icon: 'clock' },
+        'Overdue': { tag_class: 'tag-accent', icon: 'alert-triangle' },
+        'Reversed': { tag_class: 'tag-outline', icon: 'undo-2' },
+      };
+      return map[status] || { tag_class: 'tag-outline', icon: 'circle' };
+    };
+
+    const recentPayments = [
+      { tenant: 'Ananya Rao', unit: 'Shanti Nivas · A-302', method: 'UPI', amount: '₹32,000', date: '15/08/2026', status: 'Paid' },
+      { tenant: 'Vikram Sethi', unit: 'Shanti Nivas · B-104', method: 'Bank Transfer', amount: '₹18,500', date: '14/08/2026', status: 'Partially Paid' },
+      { tenant: 'Farida Khan', unit: 'Green Court · 2C', method: 'Cash', amount: '₹27,000', date: '12/08/2026', status: 'Paid' },
+      { tenant: 'Ramesh Iyer', unit: 'Green Court · 4A', method: 'UPI', amount: '₹15,000', date: '10/08/2026', status: 'Pending' },
+      { tenant: 'Priya Menon', unit: 'Lakeview Res · 1B', method: 'Cheque', amount: '₹9,000', date: '09/08/2026', status: 'Reversed' },
+    ].map(p => ({ ...p, ...tagFor(p.status) }));
+
+    const pendingActions = [
+      { icon: 'alert-triangle', icon_color: 'var(--color-accent-700)', title: '6 bills overdue by 15+ days', subtitle: 'Total ₹1,84,200 across 4 properties' },
+      { icon: 'file-signature', icon_color: 'var(--color-text)', title: '3 leases expiring in 30 days', subtitle: 'Renewal decisions needed' },
+      { icon: 'undo-2', icon_color: 'var(--color-text)', title: '1 payment pending reversal review', subtitle: 'Flagged by accountant' },
+      { icon: 'upload', icon_color: 'var(--color-text)', title: 'Meter reading import: 4 row errors', subtitle: 'Green Court, August cycle' },
+    ];
+
+    const leaseExpiries = [
+      { tenant: 'Farida Khan', unit: 'Green Court · 2C', days_label: '12 days', tag_class: 'tag-accent' },
+      { tenant: 'Ramesh Iyer', unit: 'Green Court · 4A', days_label: '24 days', tag_class: 'tag-outline' },
+      { tenant: 'Ananya Rao', unit: 'Shanti Nivas · A-302', days_label: '29 days', tag_class: 'tag-outline' },
+    ];
+
+    const billingStatuses = [
+      { label: 'Finalized', count: 142, icon: 'check-check', icon_color: 'var(--color-text)' },
+      { label: 'Paid', count: 118, icon: 'check', icon_color: 'var(--color-text)' },
+      { label: 'Partially Paid', count: 14, icon: 'circle-dot', icon_color: 'var(--color-neutral-700)' },
+      { label: 'Outstanding', count: 9, icon: 'circle', icon_color: 'var(--color-neutral-700)' },
+      { label: 'Overdue', count: 6, icon: 'alert-triangle', icon_color: 'var(--color-accent-700)' },
+      { label: 'Void', count: 2, icon: 'ban', icon_color: 'var(--color-neutral-700)' },
+    ];
+
+    const barsRaw = [
+      { month: 'Mar', billed: 100, collected: 91 },
+      { month: 'Apr', billed: 100, collected: 96 },
+      { month: 'May', billed: 100, collected: 88 },
+      { month: 'Jun', billed: 100, collected: 94 },
+      { month: 'Jul', billed: 100, collected: 97 },
+      { month: 'Aug', billed: 100, collected: 90 },
+    ];
+    const collectionBars = barsRaw.map(b => ({
+      month: b.month, pct: b.collected + '%', max_h: 140, h: Math.round(140 * b.collected / 100)
+    }));
+
+    return {
+      user: { name: 'Deepa Nair', role: role, initials: 'DN' },
+      isViewer,
+      permissionNote: isViewer ? 'View-only role — payments cannot be recorded' : 'Record a new tenant payment',
+      recordPaymentOpacity: isViewer ? 0.45 : 1,
+      recordPaymentCursor: isViewer ? 'not-allowed' : 'pointer',
+      navGroups,
+      kpis: [
+        { label: 'Properties', value: '12', delta: '2 added this qtr', delta_color: 'var(--color-neutral-700)' },
+        { label: 'Units', value: '186', delta: '9 vacant', delta_color: 'var(--color-neutral-700)' },
+        { label: 'Occupancy', value: '95.2%', delta: '+1.1% vs last mo.', delta_color: 'var(--color-text)' },
+        { label: 'Tenants', value: '177', delta: '4 new this month', delta_color: 'var(--color-neutral-700)' },
+        { label: 'Outstanding', value: '₹6,12,400', delta: '6 bills overdue', delta_color: 'var(--color-accent-700)' },
+        { label: 'Collected (Aug)', value: '₹34,80,000', delta: '90% of billed', delta_color: 'var(--color-text)' },
+      ],
+      collectionBars,
+      recentPayments,
+      pendingActions,
+      leaseExpiries,
+      billingStatuses,
+    };
+  }
+}
+
+</script>
+</body>
+</html>

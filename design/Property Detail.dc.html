@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+
+<helmet>
+  <link rel="stylesheet" href="_ds/modernist-770299c4-bef0-4b86-ab27-1dc4c7fc8dab/styles.css">
+  <script src="_ds/modernist-770299c4-bef0-4b86-ab27-1dc4c7fc8dab/_ds_bundle.js"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <style>
+    body{margin:0;background:var(--color-bg);color:var(--color-text);font-family:var(--font-body);}
+    a{color:var(--color-accent-700);text-decoration:none;}
+    a:hover{color:var(--color-accent);text-decoration:underline;}
+    .lucide{width:16px;height:16px;stroke-width:2;vertical-align:middle;}
+  </style>
+</helmet>
+
+<div style="display:flex;min-height:100vh;">
+  <aside style="width:248px;flex:0 0 248px;border-right:2px solid var(--color-divider);display:flex;flex-direction:column;background:var(--color-bg);">
+    <div style="padding:20px 20px;border-bottom:2px solid var(--color-divider);display:flex;align-items:center;gap:10px;">
+      <div style="width:28px;height:28px;background:var(--color-text);display:flex;align-items:center;justify-content:center;">
+        <span style="color:var(--color-bg);font-family:var(--font-heading);font-weight:700;font-size:15px;">K</span>
+      </div>
+      <span style="font-family:var(--font-heading);font-weight:700;font-size:18px;letter-spacing:0.02em;">KIRAYA</span>
+    </div>
+    <nav style="flex:1;overflow-y:auto;padding:14px 12px;">
+      <sc-for list="{{ navItems }}" as="item" hint-placeholder-count="6">
+        <a href="#" style="display:flex;align-items:center;gap:10px;padding:8px 10px;font-size:14px;font-weight:600;color:{{ item.active_color }};background:{{ item.active_bg }};text-decoration:none;margin-bottom:2px;">
+          <i data-lucide="{{ item.icon }}" class="lucide"></i><span>{{ item.label }}</span>
+        </a>
+      </sc-for>
+    </nav>
+  </aside>
+
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column;">
+    <header style="height:64px;flex:0 0 64px;border-bottom:2px solid var(--color-divider);display:flex;align-items:center;justify-content:space-between;padding:0 28px;">
+      <div style="font-size:12px;color:var(--color-neutral-700);">Sundaram Estates / Properties / {{ property.name }}</div>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <button class="btn-icon btn"><i data-lucide="bell" class="lucide"></i></button>
+        <div style="width:24px;height:24px;background:var(--color-neutral-900);color:var(--color-bg);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">DN</div>
+      </div>
+    </header>
+
+    <main style="flex:1;padding:28px;overflow-y:auto;">
+
+      <div style="border:2px solid var(--color-divider);padding:20px 24px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="font-family:var(--font-heading);font-weight:700;font-size:22px;">{{ property.name }}</div>
+            <span class="tag tag-neutral">{{ property.type }}</span>
+          </div>
+          <div style="font-size:13px;color:var(--color-neutral-700);margin-top:4px;">{{ property.address }} · Owner: <a href="#">{{ property.owner }}</a></div>
+        </div>
+        <button class="btn btn-secondary"><i data-lucide="pencil" class="lucide" style="margin-right:6px;"></i>Edit Property</button>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);border:2px solid var(--color-divider);margin-bottom:20px;">
+        <sc-for list="{{ tiles }}" as="t" hint-placeholder-count="4">
+          <div style="padding:16px 18px;border-right:2px solid var(--color-divider);">
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--color-neutral-700);margin-bottom:8px;">{{ t.label }}</div>
+            <div style="font-family:var(--font-heading);font-weight:700;font-size:22px;color:{{ t.color }};">{{ t.value }}</div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="display:flex;gap:0;border-bottom:2px solid var(--color-divider);margin-bottom:20px;">
+        <sc-for list="{{ tabs }}" as="tab" hint-placeholder-count="5">
+          <button onClick="{{ tab.onClick }}" style="background:none;border:none;padding:10px 18px;font-family:var(--font-body);font-size:14px;font-weight:600;cursor:pointer;color:{{ tab.color }};border-bottom:3px solid {{ tab.border }};margin-bottom:-2px;">{{ tab.label }}</button>
+        </sc-for>
+      </div>
+
+      <sc-if value="{{ isUnits }}" hint-placeholder-val="{{ true }}">
+        <table class="table" style="width:100%;">
+          <thead><tr><th>Unit</th><th>Status</th><th>Tenant</th><th style="text-align:right;">Rent</th><th>Lease Ends</th></tr></thead>
+          <tbody>
+            <sc-for list="{{ units }}" as="u" hint-placeholder-count="6">
+              <tr>
+                <td style="font-weight:600;"><a href="#">{{ u.code }}</a></td>
+                <td><span class="tag {{ u.status_class }}">{{ u.status }}</span></td>
+                <td><a href="#">{{ u.tenant }}</a></td>
+                <td style="text-align:right;font-variant-numeric:tabular-nums;">{{ u.rent }}</td>
+                <td style="color:var(--color-neutral-700);">{{ u.lease_end }}</td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </sc-if>
+
+      <sc-if value="{{ isOverview }}" hint-placeholder-val="{{ false }}">
+        <div style="border:2px solid var(--color-divider);padding:20px;max-width:520px;">
+          <sc-for list="{{ overviewRows }}" as="r" hint-placeholder-count="6">
+            <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--color-neutral-300);font-size:13px;">
+              <span style="color:var(--color-neutral-700);">{{ r.label }}</span><span style="font-weight:600;">{{ r.value }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isOwners }}" hint-placeholder-val="{{ false }}">
+        <table class="table" style="width:100%;">
+          <thead><tr><th>Owner</th><th style="text-align:right;">Ownership %</th><th>Contact</th></tr></thead>
+          <tbody>
+            <sc-for list="{{ owners }}" as="o" hint-placeholder-count="2">
+              <tr><td style="font-weight:600;"><a href="#">{{ o.name }}</a></td><td style="text-align:right;">{{ o.pct }}</td><td>{{ o.contact }}</td></tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </sc-if>
+
+      <sc-if value="{{ isFinancials }}" hint-placeholder-val="{{ false }}">
+        <table class="table" style="width:100%;">
+          <thead><tr><th>Month</th><th style="text-align:right;">Billed</th><th style="text-align:right;">Collected</th><th style="text-align:right;">Outstanding</th></tr></thead>
+          <tbody>
+            <sc-for list="{{ financials }}" as="f" hint-placeholder-count="4">
+              <tr><td>{{ f.month }}</td><td style="text-align:right;font-variant-numeric:tabular-nums;">{{ f.billed }}</td><td style="text-align:right;font-variant-numeric:tabular-nums;">{{ f.collected }}</td><td style="text-align:right;font-variant-numeric:tabular-nums;color:var(--color-accent-700);">{{ f.outstanding }}</td></tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </sc-if>
+
+      <sc-if value="{{ isDocuments }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;border:2px solid var(--color-divider);">
+          <sc-for list="{{ documents }}" as="d" hint-placeholder-count="3">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:2px solid var(--color-divider);">
+              <div style="display:flex;align-items:center;gap:10px;"><i data-lucide="file-text" class="lucide"></i><span style="font-size:13px;font-weight:600;">{{ d.name }}</span></div>
+              <button class="btn-icon btn"><i data-lucide="download" class="lucide"></i></button>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+    </main>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { activeTab: 'units' };
+  componentDidMount() { this.iconTimer = setInterval(() => { if (window.lucide) { window.lucide.createIcons(); clearInterval(this.iconTimer); } }, 50); }
+  componentDidUpdate() { if (window.lucide) window.lucide.createIcons(); }
+  componentWillUnmount() { clearInterval(this.iconTimer); }
+
+  renderVals() {
+    const active = this.state.activeTab;
+    const navItems = [
+      { icon: 'layout-dashboard', label: 'Dashboard' },
+      { icon: 'building-2', label: 'Properties', active: true },
+      { icon: 'users', label: 'Tenants' },
+      { icon: 'file-signature', label: 'Leases' },
+      { icon: 'receipt', label: 'Billing' },
+      { icon: 'credit-card', label: 'Payments' },
+    ].map(i => ({ ...i, active_color: i.active ? '#f3f2f2' : 'var(--color-text)', active_bg: i.active ? 'var(--color-text)' : 'transparent' }));
+
+    const tabDefs = [['units','Units'],['overview','Overview'],['owners','Owners'],['financials','Financials'],['documents','Documents']];
+    const tabs = tabDefs.map(([key,label]) => ({
+      label, onClick: () => this.setState({ activeTab: key }),
+      color: active === key ? 'var(--color-text)' : 'var(--color-neutral-700)',
+      border: active === key ? 'var(--color-accent)' : 'transparent',
+    }));
+
+    const statusClass = (s) => ({ 'Occupied': 'tag-neutral', 'Vacant': 'tag-outline', 'Under Notice': 'tag-accent' }[s] || 'tag-outline');
+    const units = [
+      { code: 'A-101', status: 'Occupied', tenant: 'Vikram Sethi', rent: '₹28,000', lease_end: '30/11/2026' },
+      { code: 'A-202', status: 'Occupied', tenant: 'Meera Pillai', rent: '₹29,500', lease_end: '15/02/2027' },
+      { code: 'A-302', status: 'Occupied', tenant: 'Ananya Rao', rent: '₹32,000', lease_end: '14/06/2027' },
+      { code: 'B-104', status: 'Vacant', tenant: '—', rent: '—', lease_end: '—' },
+      { code: 'B-201', status: 'Occupied', tenant: 'Nikhil Bansal', rent: '₹27,000', lease_end: '20/09/2026' },
+      { code: 'B-302', status: 'Under Notice', tenant: 'Farida Khan', rent: '₹27,000', lease_end: '31/08/2026' },
+    ].map(u => ({ ...u, status_class: statusClass(u.status) }));
+
+    return {
+      navItems, activeTab: active, tabs,
+      isUnits: active === 'units', isOverview: active === 'overview', isOwners: active === 'owners',
+      isFinancials: active === 'financials', isDocuments: active === 'documents',
+      property: { name: 'Shanti Nivas', type: 'Residential', address: '14 Marine Drive, Kochi', owner: 'Rajesh Kumar Trust' },
+      tiles: [
+        { label: 'Units', value: '24', color: 'var(--color-text)' },
+        { label: 'Occupancy', value: '91.7%', color: 'var(--color-text)' },
+        { label: 'Tenants', value: '22', color: 'var(--color-text)' },
+        { label: 'Outstanding', value: '₹1,42,000', color: 'var(--color-accent-700)' },
+      ],
+      units,
+      overviewRows: [
+        { label: 'Address', value: '14 Marine Drive, Kochi, Kerala 682031' },
+        { label: 'Property Type', value: 'Residential — Apartment Complex' },
+        { label: 'Total Units', value: '24' },
+        { label: 'Owner', value: 'Rajesh Kumar Trust (100%)' },
+        { label: 'Onboarded', value: '02/03/2023' },
+        { label: 'Billing Cycle', value: 'Monthly, 1st of month' },
+      ],
+      owners: [ { name: 'Rajesh Kumar Trust', pct: '100%', contact: 'rajesh.trust@email.com' } ],
+      financials: [
+        { month: 'May 2026', billed: '₹6,84,000', collected: '₹6,60,000', outstanding: '₹24,000' },
+        { month: 'Jun 2026', billed: '₹6,84,000', collected: '₹6,42,000', outstanding: '₹42,000' },
+        { month: 'Jul 2026', billed: '₹6,84,000', collected: '₹6,84,000', outstanding: '₹0' },
+        { month: 'Aug 2026', billed: '₹6,84,000', collected: '₹5,42,000', outstanding: '₹1,42,000' },
+      ],
+      documents: [ { name: 'Property_Deed.pdf' }, { name: 'Fire_Safety_Cert.pdf' }, { name: 'Insurance_Policy_2026.pdf' } ],
+    };
+  }
+}
+
+</script>
+</body>
+</html>
