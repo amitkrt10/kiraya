@@ -1,0 +1,18 @@
+.wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.clickableRow {
+  cursor: pointer;
+}
+
+.clickableRow:hover {
+  background: var(--color-neutral-100);
+}
