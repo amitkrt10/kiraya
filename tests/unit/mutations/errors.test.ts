@@ -35,6 +35,22 @@ describe("translateDatabaseError", () => {
     expect(translateDatabaseError(error)).toBe("Unit code already exists in this property.");
   });
 
+  it("translates a duplicate tenant code into a plain-language message", () => {
+    const error = fakeError({
+      code: "23505",
+      message: 'duplicate key value violates unique constraint "tenants_org_code_unique_idx"',
+    });
+    expect(translateDatabaseError(error)).toBe("Tenant code already exists in this organization.");
+  });
+
+  it("translates a duplicate lease code into a plain-language message", () => {
+    const error = fakeError({
+      code: "23505",
+      message: 'duplicate key value violates unique constraint "leases_org_code_unique_idx"',
+    });
+    expect(translateDatabaseError(error)).toBe("Lease code already exists in this organization.");
+  });
+
   it("falls back to a generic duplicate message for an unrecognized unique constraint", () => {
     const error = fakeError({ code: "23505", message: 'duplicate key value violates unique constraint "some_other_idx"' });
     expect(translateDatabaseError(error)).toContain("duplicate");
@@ -63,5 +79,18 @@ describe("translateDatabaseError", () => {
   it("never surfaces a raw/unknown error code's message", () => {
     const error = fakeError({ code: "XX000", message: "internal server error, stack trace: ..." });
     expect(translateDatabaseError(error)).toBe("Something went wrong saving this. Please try again.");
+  });
+
+  it("passes through a clean, short authored overlap-trigger message for exclusion violations", () => {
+    const error = fakeError({ code: "23P01", message: "This unit is already leased for the selected dates" });
+    expect(translateDatabaseError(error)).toBe("This unit is already leased for the selected dates");
+  });
+
+  it("falls back to a generic overlap message when the exclusion violation text isn't clean", () => {
+    const error = fakeError({
+      code: "23P01",
+      message: 'conflicting key value violates exclusion constraint "leases_no_overlap_excl"',
+    });
+    expect(translateDatabaseError(error)).toBe("This unit already has an overlapping lease for this period.");
   });
 });

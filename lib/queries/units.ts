@@ -29,6 +29,34 @@ export async function getPropertyUnits(
   return data ?? [];
 }
 
+export interface UnitPickerItem {
+  id: string;
+  unit_code: string;
+  name: string | null;
+  property_id: string;
+}
+
+/**
+ * Lightweight, org-wide unit list (id/code/name/property_id only) for the
+ * lease-create form's cascading Property → Unit picker — fetched once and
+ * filtered client-side by property, rather than a round-trip per property
+ * selection.
+ */
+export async function getUnitsForPicker(organizationId: string): Promise<UnitPickerItem[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("units")
+    .select("id, unit_code, name, property_id")
+    .eq("organization_id", organizationId)
+    .order("unit_code", { ascending: true });
+
+  if (error) {
+    throw new Error(`Failed to load units: ${error.message}`);
+  }
+
+  return data ?? [];
+}
+
 export interface UnitDetail extends UnitRow {
   unit_types: { id: string; name: string } | null;
   properties: { id: string; name: string; property_code: string } | null;

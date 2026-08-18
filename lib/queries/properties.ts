@@ -10,6 +10,28 @@ export interface PropertyListItem extends PropertyRow {
   unit_count: number;
 }
 
+export interface PropertyPickerItem {
+  id: string;
+  name: string;
+  property_code: string;
+}
+
+/** Lightweight, org-wide property list for pickers (e.g. the lease-create form's Property → Unit cascade). */
+export async function getPropertiesForPicker(organizationId: string): Promise<PropertyPickerItem[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("properties")
+    .select("id, name, property_code")
+    .eq("organization_id", organizationId)
+    .order("name", { ascending: true });
+
+  if (error) {
+    throw new Error(`Failed to load properties: ${error.message}`);
+  }
+
+  return data ?? [];
+}
+
 export interface GetPropertiesParams {
   organizationId: string;
   search?: string;

@@ -5,6 +5,7 @@ import { getProperty, getPropertyUnitCounts } from "@/lib/queries/properties";
 import { getPropertyUnits } from "@/lib/queries/units";
 import { getUnitTypes } from "@/lib/queries/unitTypes";
 import { getOwners, getPropertyOwnerships } from "@/lib/queries/owners";
+import { getUnitCurrentLeasesByIds } from "@/lib/queries/leases";
 import { PropertyHeaderBand } from "@/components/properties/PropertyHeaderBand";
 import { PropertyTiles } from "@/components/properties/PropertyTiles";
 import { PropertyDetailTabs } from "@/components/properties/PropertyDetailTabs";
@@ -46,6 +47,11 @@ export default async function PropertyDetailPage({
     notFound();
   }
 
+  const currentLeases = await getUnitCurrentLeasesByIds(
+    units.map((unit) => unit.id),
+    organizationId,
+  );
+
   return (
     <div>
       <PropertyHeaderBand
@@ -59,6 +65,7 @@ export default async function PropertyDetailPage({
         property={property}
         units={units}
         unitTypes={unitTypes}
+        currentLeases={currentLeases}
         ownerships={ownerships}
         owners={owners}
         canWrite={canWrite}

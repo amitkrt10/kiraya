@@ -1,0 +1,31 @@
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 2px solid var(--color-divider);
+}
+
+.column {
+  padding: 20px;
+}
+
+.column:first-child {
+  border-right: 2px solid var(--color-divider);
+}
+
+.heading {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 15px;
+  margin-bottom: 12px;
+}
+
+@media (max-width: 767px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .column:first-child {
+    border-right: none;
+    border-bottom: 2px solid var(--color-divider);
+  }
+}

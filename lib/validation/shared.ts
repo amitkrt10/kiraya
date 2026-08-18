@@ -32,3 +32,21 @@ export const countryCodeSchema = z
   .trim()
   .regex(/^[a-zA-Z]{2}$/, { error: "Use a 2-letter country code, e.g. IN." })
   .transform((value) => value.toUpperCase());
+
+export const currencyCodeSchema = z
+  .string()
+  .trim()
+  .regex(/^[a-zA-Z]{3}$/, { error: "Use a 3-letter currency code, e.g. INR." })
+  .transform((value) => value.toUpperCase());
+
+export const optionalIsoDate = () =>
+  z.preprocess(
+    (val) => (val === null || val === undefined || (typeof val === "string" && val.trim() === "") ? undefined : val),
+    z.iso.date({ error: "Enter a valid date." }).optional(),
+  );
+
+export const requiredIsoDate = (label: string) =>
+  z.preprocess(
+    (val) => (val === null || val === undefined ? "" : val),
+    z.iso.date({ error: `${label} is required.` }),
+  );

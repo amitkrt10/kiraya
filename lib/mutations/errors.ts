@@ -5,6 +5,7 @@ export type MutationResult<T> = { data: T; error?: undefined } | { data?: undefi
 const UNIQUE_VIOLATION = "23505";
 const CHECK_VIOLATION = "23514";
 const FOREIGN_KEY_VIOLATION = "23503";
+const EXCLUSION_VIOLATION = "23P01";
 
 interface UniqueConstraintMessage {
   /** Substring of the constraint name Postgres reports for this index. */
@@ -20,12 +21,15 @@ const UNIQUE_CONSTRAINT_MESSAGES: UniqueConstraintMessage[] = [
     constraint: "property_ownerships_unique_idx",
     message: "This owner already has an ownership record on this property starting on that date.",
   },
+  { constraint: "tenants_org_code_unique_idx", message: "Tenant code already exists in this organization." },
+  { constraint: "leases_org_code_unique_idx", message: "Lease code already exists in this organization." },
 ];
 
 /**
- * Translates a Postgres error from a properties/units/owners/property_ownerships
- * write into a plain-language message — never surfaces raw constraint names,
- * SQL, or internal detail/hint text (task instruction #31/#36).
+ * Translates a Postgres error from a properties/units/owners/property_ownerships/
+ * tenants/leases/lease_parties/lease_rent_rules/lease_billing_configs write into
+ * a plain-language message — never surfaces raw constraint names, SQL, or
+ * internal detail/hint text.
  *
  * Custom `raise exception ... message => '...'` text from this schema's own
  * triggers (e.g. "Property ownership exceeds 100%") is already
@@ -47,6 +51,16 @@ export function translateDatabaseError(error: PostgrestError): string {
 
   if (error.code === FOREIGN_KEY_VIOLATION) {
     return "A record this depends on no longer exists. Refresh and try again.";
+  }
+
+  if (error.code === EXCLUSION_VIOLATION) {
+    // kiraya.validate_lease_overlap() raises this for overlapping occupancy
+    // on the same unit — its message is already clean, authored text, but
+    // fall back to the task's suggested phrasing if it ever changes shape.
+    if (isCleanAuthoredMessage(error.message)) {
+      return error.message;
+    }
+    return "This unit already has an overlapping lease for this period.";
   }
 
   return "Something went wrong saving this. Please try again.";

@@ -13,22 +13,25 @@ import { UnitStatusTag } from "./UnitStatusTag";
 import { UnitFormDrawer } from "./UnitFormDrawer";
 import type { UnitListItem } from "@/lib/queries/units";
 import type { UnitType } from "@/lib/queries/unitTypes";
+import type { LeaseListItem } from "@/lib/queries/leases";
 
 /**
- * The approved design's Units tab shows Tenant/Rent/Lease Ends columns —
- * those belong to the Tenants/Leases/Billing phases and are intentionally
- * not shown here (P5.2B instruction #20). Unit Type/Area/Floor/Bedrooms/
- * Bathrooms are the schema-appropriate substitute for this phase.
+ * Rent/Lease Ends stay out of scope (billing phase, P5.2B instruction #20);
+ * Current Tenant is real, non-financial schema data now that leases exist
+ * (P5.2C), shown alongside — never instead of — the unit's own
+ * authoritative status column.
  */
 export function UnitTable({
   propertyId,
   units,
   unitTypes,
+  currentLeases,
   canWrite,
 }: {
   propertyId: string;
   units: UnitListItem[];
   unitTypes: UnitType[];
+  currentLeases: Record<string, LeaseListItem>;
   canWrite: boolean;
 }) {
   return (
@@ -55,6 +58,7 @@ export function UnitTable({
               <TableHeaderCell>Unit</TableHeaderCell>
               <TableHeaderCell>Status</TableHeaderCell>
               <TableHeaderCell>Unit Type</TableHeaderCell>
+              <TableHeaderCell>Current Tenant</TableHeaderCell>
               <TableHeaderCell style={{ textAlign: "right" }}>Area</TableHeaderCell>
               <TableHeaderCell style={{ textAlign: "right" }}>Floor</TableHeaderCell>
               <TableHeaderCell style={{ textAlign: "right" }}>Bedrooms</TableHeaderCell>
@@ -62,23 +66,35 @@ export function UnitTable({
             </TableRow>
           </TableHead>
           <TableBody>
-            {units.map((unit) => (
-              <TableRow key={unit.id}>
-                <TableCell style={{ fontWeight: 600 }}>
-                  <Link href={`/app/units/${unit.id}`}>{unit.name ? `${unit.unit_code} · ${unit.name}` : unit.unit_code}</Link>
-                </TableCell>
-                <TableCell>
-                  <UnitStatusTag status={unit.status} />
-                </TableCell>
-                <TableCell style={{ color: "var(--color-neutral-700)" }}>
-                  {unit.unit_types?.name ?? "—"}
-                </TableCell>
-                <TableCell numeric>{unit.area != null ? `${unit.area} ${unit.area_unit ?? ""}`.trim() : "—"}</TableCell>
-                <TableCell numeric>{unit.floor_number ?? "—"}</TableCell>
-                <TableCell numeric>{unit.bedrooms ?? "—"}</TableCell>
-                <TableCell numeric>{unit.bathrooms ?? "—"}</TableCell>
-              </TableRow>
-            ))}
+            {units.map((unit) => {
+              const currentLease = currentLeases[unit.id];
+              return (
+                <TableRow key={unit.id}>
+                  <TableCell style={{ fontWeight: 600 }}>
+                    <Link href={`/app/units/${unit.id}`}>{unit.name ? `${unit.unit_code} · ${unit.name}` : unit.unit_code}</Link>
+                  </TableCell>
+                  <TableCell>
+                    <UnitStatusTag status={unit.status} />
+                  </TableCell>
+                  <TableCell style={{ color: "var(--color-neutral-700)" }}>
+                    {unit.unit_types?.name ?? "—"}
+                  </TableCell>
+                  <TableCell style={{ color: "var(--color-neutral-700)" }}>
+                    {currentLease?.tenants ? (
+                      <Link href={`/app/tenants/${currentLease.tenant_id}`}>
+                        {currentLease.tenants.display_name}
+                      </Link>
+                    ) : (
+                      "—"
+                    )}
+                  </TableCell>
+                  <TableCell numeric>{unit.area != null ? `${unit.area} ${unit.area_unit ?? ""}`.trim() : "—"}</TableCell>
+                  <TableCell numeric>{unit.floor_number ?? "—"}</TableCell>
+                  <TableCell numeric>{unit.bedrooms ?? "—"}</TableCell>
+                  <TableCell numeric>{unit.bathrooms ?? "—"}</TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       )}

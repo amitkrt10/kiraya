@@ -10,11 +10,13 @@ import type { PropertyDetail } from "@/lib/queries/properties";
 import type { UnitListItem } from "@/lib/queries/units";
 import type { UnitType } from "@/lib/queries/unitTypes";
 import type { OwnerRow, PropertyOwnershipItem } from "@/lib/queries/owners";
+import type { LeaseListItem } from "@/lib/queries/leases";
 
 export interface PropertyDetailTabsProps {
   property: PropertyDetail;
   units: UnitListItem[];
   unitTypes: UnitType[];
+  currentLeases: Record<string, LeaseListItem>;
   ownerships: PropertyOwnershipItem[];
   owners: OwnerRow[];
   canWrite: boolean;
@@ -32,6 +34,7 @@ export function PropertyDetailTabs({
   property,
   units,
   unitTypes,
+  currentLeases,
   ownerships,
   owners,
   canWrite,
@@ -41,7 +44,13 @@ export function PropertyDetailTabs({
   return (
     <Tabs tabs={TABS} activeId={activeId} onChange={setActiveId} idPrefix="property-detail">
       <TabPanel id="units" activeId={activeId} idPrefix="property-detail">
-        <UnitTable propertyId={property.id} units={units} unitTypes={unitTypes} canWrite={canWrite} />
+        <UnitTable
+          propertyId={property.id}
+          units={units}
+          unitTypes={unitTypes}
+          currentLeases={currentLeases}
+          canWrite={canWrite}
+        />
       </TabPanel>
       <TabPanel id="overview" activeId={activeId} idPrefix="property-detail">
         <PropertyOverview property={property} />

@@ -5,10 +5,16 @@ export interface DetailRow {
   value: string;
 }
 
-/** Label/value box used by detail-page overview panels. Rows with an empty value should be filtered out by the caller. */
-export function DetailRows({ rows }: { rows: DetailRow[] }) {
+export interface DetailRowsProps {
+  rows: DetailRow[];
+  /** Set false when already nested inside another bordered container (e.g. a 2-column panel) to avoid a double border. */
+  bordered?: boolean;
+}
+
+/** Label/value list used by detail-page overview panels. Rows with an empty value should be filtered out by the caller. */
+export function DetailRows({ rows, bordered = true }: DetailRowsProps) {
   return (
-    <div className={styles.box}>
+    <div className={bordered ? styles.box : undefined}>
       {rows.map((row) => (
         <div key={row.label} className={styles.row}>
           <span className={styles.label}>{row.label}</span>
