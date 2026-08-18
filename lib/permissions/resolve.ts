@@ -104,3 +104,24 @@ export async function isSuperAdmin(): Promise<boolean> {
 
   return data ?? false;
 }
+
+/**
+ * Thin wrapper over `kiraya.can_write_organization` — the same check every
+ * properties/units/owners/property_ownerships RLS write policy uses
+ * (super admin OR org admin OR the `organization.write` permission code).
+ * There's no more granular per-entity permission in the database today, so
+ * this is the single gate for "can create/edit a property, unit, or
+ * ownership record" — deliberately not split into invented codes.
+ */
+export async function canWriteOrganization(organizationId: string): Promise<boolean> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("can_write_organization", {
+    p_organization_id: organizationId,
+  });
+
+  if (error) {
+    throw new Error(`Failed to check write access: ${error.message}`);
+  }
+
+  return data ?? false;
+}

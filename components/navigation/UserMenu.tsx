@@ -42,6 +42,7 @@ export function UserMenu({ name, roleLabel, initials }: UserMenuProps) {
         className={styles.trigger}
         aria-haspopup="menu"
         aria-expanded={open}
+        aria-label={`Account menu — ${name}`}
         onClick={() => setOpen((value) => !value)}
       >
         <span className={styles.avatar} aria-hidden="true">

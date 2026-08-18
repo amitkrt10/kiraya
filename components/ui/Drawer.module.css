@@ -13,6 +13,12 @@
   border-top: none;
   border-right: none;
   border-bottom: none;
+}
+
+/* A <dialog> without [open] is `display: none` by the UA stylesheet — only
+   switch it to a flex layout once it's actually open, otherwise this
+   unconditional `display` would override that and make it always visible. */
+.drawer[open] {
   display: flex;
   flex-direction: column;
 }

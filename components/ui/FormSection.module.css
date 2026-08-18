@@ -1,0 +1,28 @@
+.section {
+  margin-bottom: 24px;
+}
+
+.sectionLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-neutral-700);
+  font-weight: 700;
+  margin-bottom: 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--color-neutral-300);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.fullWidth {
+  grid-column: 1 / -1;
+}
+
+.errorSpacer {
+  margin-bottom: 16px;
+}

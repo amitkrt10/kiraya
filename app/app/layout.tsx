@@ -1,7 +1,4 @@
-import { redirect } from "next/navigation";
-import { getCurrentProfile } from "@/lib/auth/profile";
-import { resolvePermissionContext } from "@/lib/permissions/resolve";
-import { getCurrentOrganization } from "@/lib/organizations/current";
+import { getRequestContext } from "@/lib/context/current";
 import { personaLabelForRoleCodes } from "@/lib/permissions/personas";
 import { getInitials } from "@/lib/utils/initials";
 import { AppShell } from "@/components/layout/AppShell";
@@ -13,9 +10,9 @@ import { ShieldOff } from "lucide-react";
 export const dynamic = "force-dynamic";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const profile = await getCurrentProfile();
+  const context = await getRequestContext();
 
-  if (!profile) {
+  if (!context) {
     // Authenticated with Supabase Auth but no (or no longer active) kiraya.profiles
     // row — a real state, not a bug: don't loop back to /login, explain it.
     return (
@@ -29,10 +26,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     );
   }
 
-  const context = await resolvePermissionContext(profile.id);
-  const currentOrganization = await getCurrentOrganization(context.organizations);
+  const { profile, organization } = context;
 
-  if (!currentOrganization) {
+  if (!organization) {
     return (
       <StandalonePage>
         <EmptyState
@@ -45,18 +41,18 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   }
 
   const userName = profile.full_name ?? "Unnamed user";
-  const roleLabel = personaLabelForRoleCodes(currentOrganization.roleCodes);
+  const roleLabel = personaLabelForRoleCodes(organization.roleCodes);
   // The permission catalog only has 2 seeded codes today (P5.2A finding) —
   // "not an org admin" is the best available proxy for view-only until more
   // granular permissions exist server-side.
-  const isViewer = !currentOrganization.isOrgAdmin;
+  const isViewer = !organization.isOrgAdmin;
 
   return (
     <ToastProvider>
       <AppShell
-        organizations={context.organizations}
-        currentOrganizationId={currentOrganization.organizationId}
-        currentOrganizationName={currentOrganization.organizationName}
+        organizations={context.permissions.organizations}
+        currentOrganizationId={organization.organizationId}
+        currentOrganizationName={organization.organizationName}
         userName={userName}
         userInitials={getInitials(profile.full_name)}
         roleLabel={roleLabel}

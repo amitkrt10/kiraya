@@ -53,3 +53,9 @@ export type { EmptyStateProps } from "./EmptyState";
 
 export { ErrorState, PermissionDenied } from "./ErrorState";
 export type { ErrorStateProps, PermissionDeniedProps } from "./ErrorState";
+
+export { Pagination } from "./Pagination";
+export type { PaginationProps } from "./Pagination";
+
+export { DetailRows } from "./DetailRows";
+export type { DetailRow } from "./DetailRows";

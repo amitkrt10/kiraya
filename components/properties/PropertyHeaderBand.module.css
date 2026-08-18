@@ -1,0 +1,29 @@
+.band {
+  border: 2px solid var(--color-divider);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.name {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 22px;
+}
+
+.meta {
+  font-size: 13px;
+  color: var(--color-neutral-700);
+  margin-top: 4px;
+}
