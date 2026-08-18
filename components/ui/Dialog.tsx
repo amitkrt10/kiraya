@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useEffect, useRef } from "react";
+import { ReactNode, useEffect, useId, useRef } from "react";
 import { X } from "lucide-react";
 import styles from "./Dialog.module.css";
 
@@ -15,6 +15,8 @@ export interface DialogProps {
 export function Dialog({ open, onClose, title, children, footer }: DialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const lastFocused = useRef<HTMLElement | null>(null);
+  // See Drawer.tsx — must be unique per instance, not a hardcoded string id.
+  const titleId = useId();
 
   useEffect(() => {
     const dialog = ref.current;
@@ -44,14 +46,14 @@ export function Dialog({ open, onClose, title, children, footer }: DialogProps) 
     <dialog
       ref={ref}
       className={["dialog", styles.dialog].join(" ")}
-      aria-labelledby="dialog-title"
+      aria-labelledby={titleId}
       onCancel={(event) => {
         event.preventDefault();
         ref.current?.close();
       }}
     >
       <div className={styles.header}>
-        <h2 id="dialog-title" className={styles.title}>
+        <h2 id={titleId} className={styles.title}>
           {title}
         </h2>
         <button

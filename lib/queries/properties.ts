@@ -125,6 +125,10 @@ export async function getProperty(
     .maybeSingle();
 
   if (error) {
+    // 22P02 = invalid input syntax (a malformed id can't be cast to `uuid`)
+    // — that's a not-found, not a server error. Callers should validate the
+    // route param up front (see lib/utils/uuid.ts) so this is a safety net.
+    if (error.code === "22P02") return null;
     throw new Error(`Failed to load property: ${error.message}`);
   }
 

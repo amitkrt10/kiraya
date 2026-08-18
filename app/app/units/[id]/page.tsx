@@ -5,9 +5,14 @@ import { getUnit } from "@/lib/queries/units";
 import { getUnitTypes } from "@/lib/queries/unitTypes";
 import { UnitHeaderBand } from "@/components/units/UnitHeaderBand";
 import { UnitOverview } from "@/components/units/UnitOverview";
+import { isUuid } from "@/lib/utils/uuid";
 
 export default async function UnitDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  if (!isUuid(id)) {
+    notFound();
+  }
+
   const context = await getRequestContext();
   if (!context?.organization) {
     return null;

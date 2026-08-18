@@ -44,6 +44,8 @@ export async function getUnit(unitId: string, organizationId: string): Promise<U
     .maybeSingle();
 
   if (error) {
+    // See getProperty() — an invalid uuid should read as not-found.
+    if (error.code === "22P02") return null;
     throw new Error(`Failed to load unit: ${error.message}`);
   }
 

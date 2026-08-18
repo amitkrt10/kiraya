@@ -46,7 +46,10 @@ test.describe("cross-organization property/unit isolation", () => {
   }) => {
     await login(page, orgAEmail!, orgAPassword!);
     await page.goto(`/app/properties/${orgAPropertyId}`);
-    await expect(page.getByText("Edit Property")).toBeVisible({ timeout: 10_000 });
+    // Scoped to the button role: "Edit Property" text also appears in the
+    // (DOM-present but closed) edit drawer's heading, which getByText would
+    // otherwise match too.
+    await expect(page.getByRole("button", { name: "Edit Property" })).toBeVisible({ timeout: 10_000 });
 
     // Sign out of org A via the account menu, then sign in as org B.
     await page.getByRole("button", { name: /^Account menu/ }).click();
@@ -56,6 +59,6 @@ test.describe("cross-organization property/unit isolation", () => {
     await login(page, orgBEmail!, orgBPassword!);
     await page.goto(`/app/properties/${orgAPropertyId}`);
     await expect(page.getByText("Page not found")).toBeVisible();
-    await expect(page.getByText("Edit Property")).not.toBeVisible();
+    await expect(page.getByRole("button", { name: "Edit Property" })).not.toBeVisible();
   });
 });
