@@ -1,0 +1,311 @@
+/* ============================================================
+   Kiraya — Modernist design system tokens
+   Reconstructed from design/Kiraya Handoff Spec.dc.html (Section A)
+   and the inline styles in the approved .dc.html screens.
+   Anchor values confirmed in the design files: bg #f3f2f2,
+   text #201e1d, accent #ec3013. The rest of the neutral scale and
+   accent-700 are not present in this repo (the _ds stylesheet that
+   defines them lives outside the repo) and have been derived to be
+   consistent with those anchors — adjust here if the real Modernist
+   token sheet becomes available.
+   ============================================================ */
+
+:root {
+  /* base */
+  --color-bg: #f3f2f2;
+  --color-surface: #ffffff;
+  --color-text: #201e1d;
+
+  /* neutral scale (warm gray, matched to text/bg anchors) */
+  --color-neutral-100: #e9e7e5;
+  --color-neutral-300: #d6d3d1;
+  --color-neutral-700: #6b6764;
+  --color-neutral-900: #201e1d;
+
+  /* structural rule color — "strong grid, strong rules" */
+  --color-divider: #201e1d;
+
+  /* accent */
+  --color-accent: #ec3013;
+  --color-accent-700: #b8280f;
+
+  /* semantic feedback (derived from accent + neutral scale, tag+icon always pairs with these) */
+  --color-success: #1f6e43;
+  --color-warning: #a3690a;
+  --color-danger: var(--color-accent-700);
+
+  /* type */
+  --font-heading: var(--font-archivo), "Archivo", system-ui, sans-serif;
+  --font-body: var(--font-archivo), "Archivo", system-ui, sans-serif;
+
+  /* structure */
+  --radius: 0px;
+  --rule-width: 2px;
+  --sidebar-width: 248px;
+  --topbar-height: 64px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  margin: 0;
+}
+
+p,
+li,
+td,
+th,
+label,
+input,
+select,
+textarea,
+button {
+  font-family: var(--font-body);
+}
+
+a {
+  color: var(--color-accent-700);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--color-accent);
+  text-decoration: underline;
+}
+
+img {
+  max-width: 100%;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-neutral-300);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
+/* ============================================================
+   Shared component vocabulary — matches classes used verbatim in
+   the approved .dc.html screens (.btn*, .tag*, .input, .table, .dialog)
+   ============================================================ */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: var(--rule-width) solid var(--color-divider);
+  border-radius: var(--radius);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: background-color 0.1s ease;
+}
+
+.btn:hover {
+  background: var(--color-neutral-100);
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.btn-primary {
+  background: var(--color-text);
+  border-color: var(--color-text);
+  color: var(--color-bg);
+}
+
+.btn-primary:hover {
+  background: var(--color-neutral-900);
+}
+
+.btn-secondary {
+  background: transparent;
+}
+
+.btn-danger {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #fff;
+}
+
+.btn-danger:hover {
+  background: var(--color-accent-700);
+  border-color: var(--color-accent-700);
+}
+
+.btn-icon {
+  padding: 8px;
+}
+
+.input {
+  width: 100%;
+  border: var(--rule-width) solid var(--color-divider);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  padding: 8px 10px;
+}
+
+.input:disabled {
+  background: var(--color-neutral-100);
+  color: var(--color-neutral-700);
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 2px 8px;
+  border: 1px solid var(--color-neutral-700);
+  border-radius: var(--radius);
+  color: var(--color-text);
+  background: transparent;
+}
+
+.tag-outline {
+  border-color: var(--color-neutral-700);
+  color: var(--color-text);
+}
+
+.tag-neutral {
+  border-color: var(--color-text);
+  background: var(--color-neutral-100);
+  color: var(--color-text);
+}
+
+.tag-accent {
+  border-color: var(--color-accent);
+  color: var(--color-accent-700);
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.table th,
+.table td {
+  border-bottom: 1px solid var(--color-neutral-300);
+  padding: 10px 12px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.table th {
+  background: var(--color-neutral-100);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-neutral-700);
+}
+
+.table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.dialog {
+  background: var(--color-bg);
+  border: var(--rule-width) solid var(--color-divider);
+  border-radius: var(--radius);
+  box-shadow: none;
+}
+
+.card {
+  background: var(--color-bg);
+  border: var(--rule-width) solid var(--color-divider);
+  border-radius: var(--radius);
+}
+
+.skeleton {
+  background: var(--color-neutral-100);
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.5),
+    transparent
+  );
+  animation: skeleton-shimmer 1.4s infinite;
+}
+
+@keyframes skeleton-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.lucide-spin {
+  animation: lucide-spin 0.8s linear infinite;
+}
+
+@keyframes lucide-spin {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

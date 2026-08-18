@@ -1,0 +1,28 @@
+.item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.item:hover {
+  text-decoration: none;
+}
+
+.groupLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0 10px 6px;
+}
+
+.group {
+  margin-top: 14px;
+}
+
+.group:first-child {
+  margin-top: 0;
+}

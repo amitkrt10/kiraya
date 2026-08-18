@@ -1,0 +1,66 @@
+.viewport {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 100;
+  max-width: 360px;
+}
+
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border: var(--rule-width) solid var(--color-divider);
+  background: var(--color-bg);
+  padding: 12px 14px;
+  font-size: 13px;
+  box-shadow: 0 4px 12px rgba(32, 30, 29, 0.15);
+}
+
+.success {
+  border-color: var(--color-success);
+}
+
+.warning {
+  border-color: var(--color-warning);
+}
+
+.error {
+  border-color: var(--color-accent);
+}
+
+.icon {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
+.success .icon {
+  color: var(--color-success);
+}
+
+.warning .icon {
+  color: var(--color-warning);
+}
+
+.error .icon {
+  color: var(--color-accent-700);
+}
+
+.message {
+  flex: 1 1 auto;
+}
+
+.dismiss {
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--color-neutral-700);
+  flex: 0 0 auto;
+}
+
+.dismiss:hover {
+  color: var(--color-text);
+}

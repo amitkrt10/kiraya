@@ -1,0 +1,27 @@
+.trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: none;
+  border: 2px solid var(--color-divider);
+  padding: 8px 10px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  color: inherit;
+  appearance: none;
+}
+
+.select {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+}
+
+.wrapper {
+  position: relative;
+}

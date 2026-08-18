@@ -1,0 +1,39 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.labelRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.required {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  display: inline-block;
+}
+
+.hint {
+  font-size: 12px;
+  color: var(--color-neutral-700);
+}
+
+.error {
+  font-size: 12px;
+  color: var(--color-accent-700);
+}
+
+.inputError {
+  border-color: var(--color-accent-700) !important;
+}

@@ -1,0 +1,57 @@
+.topbar {
+  height: var(--topbar-height);
+  flex: 0 0 var(--topbar-height);
+  border-bottom: 2px solid var(--color-divider);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  background: var(--color-bg);
+  gap: 16px;
+}
+
+.titleBlock {
+  min-width: 0;
+}
+
+.title {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 20px;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 0 0 auto;
+}
+
+.searchWrapper {
+  position: relative;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-neutral-700);
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 260px;
+  padding: 8px 10px 8px 34px;
+  font-size: 14px;
+}
+
+.viewerBanner {
+  background: var(--color-neutral-100);
+  border-bottom: 2px solid var(--color-divider);
+  padding: 8px 28px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
