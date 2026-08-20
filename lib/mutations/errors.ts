@@ -26,6 +26,11 @@ const UNIQUE_CONSTRAINT_MESSAGES: UniqueConstraintMessage[] = [
   },
   { constraint: "tenants_org_code_unique_idx", message: "Tenant code already exists in this organization." },
   { constraint: "leases_org_code_unique_idx", message: "Lease code already exists in this organization." },
+  {
+    constraint: "payment_methods_org_code_unique_idx",
+    message: "A payment method with this code already exists in this organization.",
+  },
+  { constraint: "payments_org_number_unique_idx", message: "Payment number already exists in this organization." },
 ];
 
 /**

@@ -8,20 +8,29 @@ const STATUS_LABELS: Record<TenantRow["status"], string> = {
   ARCHIVED: "Archived",
 };
 
+function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 2 }).format(amount);
+}
+
 /**
- * Non-financial tenant/lease tiles — the approved design's tiles (Current
- * Rent, Outstanding, Available Credit, Deposit Held) are financial and out
- * of scope for this phase (task instruction #24); only "Lease Ends" from
- * the original design is real, non-financial schema data and is kept.
+ * Outstanding/Credit are now real, authoritative values (kiraya.
+ * get_tenant_due()/get_tenant_credit(), added in P5.2E) — P5.2C deferred
+ * them because no such source existed yet. "Current Rent"/"Deposit Held"
+ * from the original design remain out of scope (rent varies by rule/period,
+ * not a single authoritative figure; deposits arrive in a later phase).
  */
 export function TenantTiles({
   tenant,
   activeLeaseCount,
   currentLease,
+  outstanding,
+  credit,
 }: {
   tenant: TenantRow;
   activeLeaseCount: number;
   currentLease: LeaseListItem | null;
+  outstanding: number;
+  credit: number;
 }) {
   const tiles = [
     { label: "Status", value: STATUS_LABELS[tenant.status] },
@@ -33,6 +42,8 @@ export function TenantTiles({
         : "—",
     },
     { label: "Lease Ends", value: currentLease?.agreement_end_date ?? "—" },
+    { label: "Outstanding", value: formatCurrency(outstanding) },
+    { label: "Available Credit", value: formatCurrency(credit) },
   ];
 
   return (

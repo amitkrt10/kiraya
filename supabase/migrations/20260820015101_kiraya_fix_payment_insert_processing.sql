@@ -1,0 +1,65 @@
+-- ============================================================
+-- KIRAYA
+-- Financial integrity: payments must enter the ledger/allocation
+-- pipeline on INSERT, not only on UPDATE
+--
+-- Root cause (P5.2E inspection, confirmed via a live reproduction
+-- against the linked project, not guessed):
+--
+-- kiraya.payments.status defaults to 'POSTED' (the enum has only
+-- POSTED/REVERSED). The only trigger that runs the financial
+-- pipeline is:
+--
+--   create trigger trg_process_posted_payment
+--   after update on kiraya.payments
+--   for each row execute function kiraya.process_posted_payment();
+--
+-- whose body only acts when:
+--   new.status = 'POSTED' and old.status is distinct from 'POSTED'
+--
+-- Because there is no non-terminal status to insert-then-transition
+-- from (POSTED is the only sensible initial value, and
+-- kiraya.prevent_posted_payment_mutation() already makes REVERSED
+-- rows immutable and blocks any POSTED-row edit that isn't a
+-- transition to REVERSED), a plain INSERT of a POSTED payment can
+-- never reach this trigger at all — AFTER UPDATE never fires for an
+-- INSERT statement. Reproduced live: inserting a payment for the
+-- exact amount of a real FINALIZED bill produced zero ledger
+-- entries, zero allocations, and left the bill FINALIZED (never
+-- PAID). kiraya.reverse_payment() also depends on a PAYMENT ledger
+-- entry existing, so it was unreachable for any such payment too.
+--
+-- Fix: this is a trigger-scope fix only. kiraya.process_posted_payment()
+-- itself needs no change — in a PL/pgSQL trigger fired by INSERT,
+-- OLD is NULL, and field access on a NULL record returns NULL, so
+-- `old.status is distinct from 'POSTED'` evaluates to
+-- `null is distinct from 'POSTED'` = true, which is exactly the
+-- desired condition for a freshly-inserted POSTED row. Re-pointing
+-- the same trigger at AFTER INSERT OR UPDATE (instead of duplicating
+-- its logic into a second function) is therefore sufficient and
+-- correct for every case:
+--
+--   INSERT status=POSTED            -> old is null            -> processes (fixed)
+--   INSERT status=REVERSED          -> new.status <> 'POSTED'  -> no-op (nothing to reverse)
+--   UPDATE non-POSTED -> POSTED     -> already unreachable: the only non-POSTED value is
+--                                       REVERSED, and prevent_posted_payment_mutation()
+--                                       already makes REVERSED rows immutable
+--   UPDATE POSTED, still POSTED     -> already unreachable: prevent_posted_payment_mutation()
+--                                       rejects any update to a POSTED row that isn't a
+--                                       transition to REVERSED — so this never reaches the
+--                                       AFTER trigger at all, and even if it somehow did,
+--                                       old.status = 'POSTED' so the condition is false
+--                                       (no duplicate processing either way)
+--
+-- kiraya.post_payment_to_ledger() remains SECURITY DEFINER (owner
+-- postgres) — kiraya.ledger_entries has no INSERT policy for any
+-- role, by design, so only this already-existing, already-audited
+-- privileged path may ever write to it. Nothing about that
+-- authorization boundary changes here.
+-- ============================================================
+
+drop trigger if exists trg_process_posted_payment on kiraya.payments;
+
+create trigger trg_process_posted_payment
+    after insert or update on kiraya.payments
+    for each row execute function kiraya.process_posted_payment();

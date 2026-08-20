@@ -6,6 +6,7 @@ import { TenantStatusTag } from "@/components/tenants/TenantStatusTag";
 import { LeaseStatusTag } from "@/components/leases/LeaseStatusTag";
 import { BillStatusTag } from "@/components/billing/BillStatusTag";
 import { BillingRunStatusTag } from "@/components/billing/BillingRunStatusTag";
+import { PaymentStatusTag } from "@/components/payments/PaymentStatusTag";
 
 describe("PropertyStatusTag", () => {
   it.each([
@@ -76,6 +77,16 @@ describe("BillingRunStatusTag", () => {
     ["FINALIZED", "Finalized"],
   ] as const)("renders the %s status as %s", (status, label) => {
     render(<BillingRunStatusTag status={status} />);
+    expect(screen.getByText(label)).toBeInTheDocument();
+  });
+});
+
+describe("PaymentStatusTag", () => {
+  it.each([
+    ["POSTED", "Posted"],
+    ["REVERSED", "Reversed"],
+  ] as const)("renders the %s status as %s", (status, label) => {
+    render(<PaymentStatusTag status={status} />);
     expect(screen.getByText(label)).toBeInTheDocument();
   });
 });

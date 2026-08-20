@@ -81,6 +81,37 @@ describe("translateDatabaseError", () => {
     expect(translateDatabaseError(error)).toBe("Something went wrong saving this. Please try again.");
   });
 
+  it("translates a duplicate payment method code into a plain-language message", () => {
+    const error = fakeError({
+      code: "23505",
+      message: 'duplicate key value violates unique constraint "payment_methods_org_code_unique_idx"',
+    });
+    expect(translateDatabaseError(error)).toBe("A payment method with this code already exists in this organization.");
+  });
+
+  it("translates a duplicate payment number into a plain-language message", () => {
+    const error = fakeError({
+      code: "23505",
+      message: 'duplicate key value violates unique constraint "payments_org_number_unique_idx"',
+    });
+    expect(translateDatabaseError(error)).toBe("Payment number already exists in this organization.");
+  });
+
+  it("passes through kiraya.reverse_payment()'s clean 'already reversed' message", () => {
+    const error = fakeError({ code: "23514", message: "Payment has already been reversed." });
+    expect(translateDatabaseError(error)).toBe("Payment has already been reversed.");
+  });
+
+  it("passes through the missing-reversal-reason message (22023)", () => {
+    const error = fakeError({ code: "22023", message: "A reason is required to reverse a payment." });
+    expect(translateDatabaseError(error)).toBe("A reason is required to reverse a payment.");
+  });
+
+  it("passes through kiraya.post_payment_reversal_ledger_entry()'s explicit permission message for 42501", () => {
+    const error = fakeError({ code: "42501", message: "Not authorized to reverse payments in this organization." });
+    expect(translateDatabaseError(error)).toBe("Not authorized to reverse payments in this organization.");
+  });
+
   it("passes through kiraya.generate_bill()'s authored duplicate-bill message for a unique violation", () => {
     const error = fakeError({ code: "23505", message: "Bill already exists for this lease and billing period." });
     expect(translateDatabaseError(error)).toBe("Bill already exists for this lease and billing period.");

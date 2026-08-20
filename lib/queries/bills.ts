@@ -142,6 +142,29 @@ export async function getBillItems(billId: string, organizationId: string): Prom
  * otherwise do not invent it" — the backend doesn't wire creation to any
  * financial effect, so no creation UI is built).
  */
+/**
+ * Sum of posted (non-reversed) CREDIT_APPLICATION ledger entries against
+ * this bill — a plain total of already-authoritative rows kiraya.
+ * apply_tenant_credit_to_bill() itself posted, not an independently
+ * computed financial value.
+ */
+export async function getBillCreditApplied(billId: string, organizationId: string): Promise<number> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("ledger_entries")
+    .select("debit_amount")
+    .eq("bill_id", billId)
+    .eq("organization_id", organizationId)
+    .eq("entry_type", "CREDIT_APPLICATION")
+    .eq("is_reversal", false);
+
+  if (error) {
+    throw new Error(`Failed to load credit applied to this bill: ${error.message}`);
+  }
+
+  return (data ?? []).reduce((sum, row) => sum + row.debit_amount, 0);
+}
+
 export async function getBillAdjustments(billId: string, organizationId: string): Promise<BillAdjustmentRow[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
