@@ -9,6 +9,7 @@ const EXCLUSION_VIOLATION = "23P01";
 const INVALID_DATETIME = "22007";
 const INVALID_PARAMETER = "22023";
 const PERMISSION_DENIED = "42501";
+const NUMERIC_VALUE_OUT_OF_RANGE = "22003";
 
 interface UniqueConstraintMessage {
   /** Substring of the constraint name Postgres reports for this index. */
@@ -101,6 +102,15 @@ export function translateDatabaseError(error: PostgrestError): string {
       return error.message;
     }
     return "That value isn't valid.";
+  }
+
+  if (error.code === NUMERIC_VALUE_OUT_OF_RANGE) {
+    // kiraya.apply_tenant_credit_to_bill()/post_credit_application_to_ledger()
+    // raise this for a non-positive amount.
+    if (isCleanAuthoredMessage(error.message)) {
+      return error.message;
+    }
+    return "Enter an amount greater than zero.";
   }
 
   if (error.code === PERMISSION_DENIED) {

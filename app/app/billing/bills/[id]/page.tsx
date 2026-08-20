@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { getRequestContext } from "@/lib/context/current";
 import { canWriteOrganization } from "@/lib/permissions/resolve";
 import { getBill, getBillItems, getBillAdjustments, getBillCreditApplied } from "@/lib/queries/bills";
-import { getBillBalance, getBillPaidAmount } from "@/lib/queries/financial";
+import { getBillBalance, getBillPaidAmount, getTenantCredit } from "@/lib/queries/financial";
 import { getBillPaymentsApplied } from "@/lib/queries/payments";
 import { BillHeaderBand } from "@/components/billing/BillHeaderBand";
 import { BillChargesPanel } from "@/components/billing/BillChargesPanel";
@@ -33,12 +33,13 @@ export default async function BillDetailPage({
     notFound();
   }
 
-  const [items, adjustments, paidAmount, outstanding, creditApplied, paymentsApplied] = await Promise.all([
+  const [items, adjustments, paidAmount, outstanding, creditApplied, availableCredit, paymentsApplied] = await Promise.all([
     getBillItems(id, organizationId),
     getBillAdjustments(id, organizationId),
     getBillPaidAmount(id),
     getBillBalance(id),
     getBillCreditApplied(id, organizationId),
+    getTenantCredit(bill.tenant_id),
     getBillPaymentsApplied(id, organizationId),
   ]);
 
@@ -49,7 +50,14 @@ export default async function BillDetailPage({
         <BillChargesPanel bill={bill} items={items} adjustments={adjustments} />
       </div>
       <div style={{ marginTop: 20 }}>
-        <BillPaymentSummary bill={bill} paidAmount={paidAmount} outstanding={outstanding} creditApplied={creditApplied} />
+        <BillPaymentSummary
+          bill={bill}
+          paidAmount={paidAmount}
+          outstanding={outstanding}
+          creditApplied={creditApplied}
+          availableCredit={availableCredit}
+          canWrite={canWrite}
+        />
       </div>
       <div className="card" style={{ padding: "20px 24px", marginTop: 20 }}>
         <div style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 15, marginBottom: 14 }}>

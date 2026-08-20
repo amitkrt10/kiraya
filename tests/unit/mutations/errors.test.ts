@@ -155,6 +155,31 @@ describe("translateDatabaseError", () => {
     expect(translateDatabaseError(error)).toBe("You don't have permission to perform this action.");
   });
 
+  it("passes through post_credit_application_to_ledger()'s explicit permission message for 42501", () => {
+    const error = fakeError({ code: "42501", message: "Not authorized to apply credit in this organization." });
+    expect(translateDatabaseError(error)).toBe("Not authorized to apply credit in this organization.");
+  });
+
+  it("passes through apply_tenant_credit_to_bill()'s ineligible-status message for 23514", () => {
+    const error = fakeError({ code: "23514", message: "Credit cannot be applied to this bill status." });
+    expect(translateDatabaseError(error)).toBe("Credit cannot be applied to this bill status.");
+  });
+
+  it("passes through apply_tenant_credit_to_bill()'s insufficient-credit message for 23514", () => {
+    const error = fakeError({ code: "23514", message: "No tenant credit is available to apply." });
+    expect(translateDatabaseError(error)).toBe("No tenant credit is available to apply.");
+  });
+
+  it("translates a non-positive credit application amount (22003) into a plain-language message", () => {
+    const error = fakeError({ code: "22003", message: 'numeric field overflow for column "p_amount"' });
+    expect(translateDatabaseError(error)).toBe("Enter an amount greater than zero.");
+  });
+
+  it("passes through a clean authored 22003 message when the RPC's own text is already clean", () => {
+    const error = fakeError({ code: "22003", message: "Credit application amount must be greater than zero." });
+    expect(translateDatabaseError(error)).toBe("Credit application amount must be greater than zero.");
+  });
+
   it("passes through a clean, short authored overlap-trigger message for exclusion violations", () => {
     const error = fakeError({ code: "23P01", message: "This unit is already leased for the selected dates" });
     expect(translateDatabaseError(error)).toBe("This unit is already leased for the selected dates");
