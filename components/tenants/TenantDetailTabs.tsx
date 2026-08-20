@@ -1,18 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { CreditCard, FileText } from "lucide-react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { CreditCard, FileText, ScrollText } from "lucide-react";
 import { Tabs, TabPanel } from "@/components/ui/Tabs";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { Pagination } from "@/components/ui/Pagination";
 import { PlaceholderPage } from "@/components/layout/PlaceholderPage";
 import { TenantOverview } from "./TenantOverview";
 import { TenantLeaseList } from "./TenantLeaseList";
 import { BillTable } from "@/components/billing/BillTable";
 import { PaymentTable } from "@/components/payments/PaymentTable";
+import { LedgerTable } from "@/components/ledger/LedgerTable";
+import { LedgerExportButton } from "@/components/ledger/LedgerExportButton";
 import type { TenantRow } from "@/lib/queries/tenants";
 import type { LeaseListItem } from "@/lib/queries/leases";
 import type { BillListItem } from "@/lib/queries/bills";
 import type { PaymentListItem } from "@/lib/queries/payments";
+import type { GetLedgerEntriesResult } from "@/lib/queries/ledger";
 
 const TABS = [
   { id: "overview", label: "Overview" },
@@ -30,14 +35,29 @@ export function TenantDetailTabs({
   leases,
   bills,
   payments,
+  ledger,
 }: {
   tenant: TenantRow;
   currentLease: LeaseListItem | null;
   leases: LeaseListItem[];
   bills: BillListItem[];
   payments: PaymentListItem[];
+  ledger: GetLedgerEntriesResult;
 }) {
   const [activeId, setActiveId] = useState("overview");
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  function buildLedgerHref(nextPage: number): string {
+    const query = new URLSearchParams(searchParams.toString());
+    if (nextPage > 1) {
+      query.set("ledgerPage", String(nextPage));
+    } else {
+      query.delete("ledgerPage");
+    }
+    const search = query.toString();
+    return search ? `${pathname}?${search}` : pathname;
+  }
 
   return (
     <Tabs tabs={TABS} activeId={activeId} onChange={setActiveId} idPrefix="tenant-detail">
@@ -62,7 +82,21 @@ export function TenantDetailTabs({
         )}
       </TabPanel>
       <TabPanel id="ledger" activeId={activeId} idPrefix="tenant-detail">
-        <PlaceholderPage title="Ledger" description="The tenant ledger arrives in a later phase." />
+        {ledger.entries.length === 0 ? (
+          <EmptyState
+            icon={ScrollText}
+            title="No ledger entries yet"
+            description="Ledger entries appear here once bills are finalized and payments are recorded."
+          />
+        ) : (
+          <>
+            <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
+              <LedgerExportButton query={{ tenant: tenant.id }} />
+            </div>
+            <LedgerTable entries={ledger.entries} />
+            <Pagination page={ledger.page} pageSize={ledger.pageSize} totalCount={ledger.totalCount} buildHref={buildLedgerHref} />
+          </>
+        )}
       </TabPanel>
       <TabPanel id="documents" activeId={activeId} idPrefix="tenant-detail">
         <PlaceholderPage title="Documents" description="Document management for this tenant arrives in a later phase." />
