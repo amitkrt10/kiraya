@@ -6,6 +6,7 @@ import { getLeaseParties } from "@/lib/queries/leaseParties";
 import { getLeaseRentRules } from "@/lib/queries/rentRules";
 import { getLeaseBillingConfigs } from "@/lib/queries/billingConfigs";
 import { getTenantsForPicker } from "@/lib/queries/tenants";
+import { getLeaseBills } from "@/lib/queries/bills";
 import { LeaseHeaderBand } from "@/components/leases/LeaseHeaderBand";
 import { LeaseDetailTabs } from "@/components/leases/LeaseDetailTabs";
 import { Alert } from "@/components/ui/Alert";
@@ -37,12 +38,13 @@ export default async function LeaseDetailPage({
 
   const organizationId = context.organization.organizationId;
 
-  const [lease, parties, rentRules, billingConfigs, tenants, canWrite] = await Promise.all([
+  const [lease, parties, rentRules, billingConfigs, tenants, bills, canWrite] = await Promise.all([
     getLease(id, organizationId),
     getLeaseParties(id, organizationId),
     getLeaseRentRules(id, organizationId),
     getLeaseBillingConfigs(id, organizationId),
     getTenantsForPicker(organizationId),
+    getLeaseBills(id, organizationId),
     canWriteOrganization(organizationId),
   ]);
 
@@ -71,6 +73,7 @@ export default async function LeaseDetailPage({
         tenants={tenants}
         rentRules={rentRules}
         billingConfigs={billingConfigs}
+        bills={bills}
         canWrite={canWrite}
       />
     </div>

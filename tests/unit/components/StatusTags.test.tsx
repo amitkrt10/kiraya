@@ -4,6 +4,8 @@ import { PropertyStatusTag } from "@/components/properties/PropertyStatusTag";
 import { UnitStatusTag } from "@/components/units/UnitStatusTag";
 import { TenantStatusTag } from "@/components/tenants/TenantStatusTag";
 import { LeaseStatusTag } from "@/components/leases/LeaseStatusTag";
+import { BillStatusTag } from "@/components/billing/BillStatusTag";
+import { BillingRunStatusTag } from "@/components/billing/BillingRunStatusTag";
 
 describe("PropertyStatusTag", () => {
   it.each([
@@ -47,6 +49,33 @@ describe("LeaseStatusTag", () => {
     ["CANCELLED", "Cancelled"],
   ] as const)("renders the %s status as %s", (status, label) => {
     render(<LeaseStatusTag status={status} />);
+    expect(screen.getByText(label)).toBeInTheDocument();
+  });
+});
+
+describe("BillStatusTag", () => {
+  it.each([
+    ["DRAFT", "Draft"],
+    ["FINALIZED", "Finalized"],
+    ["PARTIALLY_PAID", "Partially Paid"],
+    ["PAID", "Paid"],
+    ["VOID", "Void"],
+  ] as const)("renders the %s status as %s", (status, label) => {
+    render(<BillStatusTag status={status} />);
+    expect(screen.getByText(label)).toBeInTheDocument();
+  });
+});
+
+describe("BillingRunStatusTag", () => {
+  it.each([
+    ["DRAFT", "Draft"],
+    ["RUNNING", "Running"],
+    ["COMPLETED", "Completed"],
+    ["PARTIAL", "Partial"],
+    ["FAILED", "Failed"],
+    ["FINALIZED", "Finalized"],
+  ] as const)("renders the %s status as %s", (status, label) => {
+    render(<BillingRunStatusTag status={status} />);
     expect(screen.getByText(label)).toBeInTheDocument();
   });
 });

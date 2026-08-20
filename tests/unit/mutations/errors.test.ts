@@ -81,6 +81,49 @@ describe("translateDatabaseError", () => {
     expect(translateDatabaseError(error)).toBe("Something went wrong saving this. Please try again.");
   });
 
+  it("passes through kiraya.generate_bill()'s authored duplicate-bill message for a unique violation", () => {
+    const error = fakeError({ code: "23505", message: "Bill already exists for this lease and billing period." });
+    expect(translateDatabaseError(error)).toBe("Bill already exists for this lease and billing period.");
+  });
+
+  it("still falls back to the constraint-name lookup for a raw unique-violation message", () => {
+    const error = fakeError({
+      code: "23505",
+      message: 'duplicate key value violates unique constraint "leases_org_code_unique_idx"',
+    });
+    expect(translateDatabaseError(error)).toBe("Lease code already exists in this organization.");
+  });
+
+  it("passes through kiraya.finalize_bill()/void_bill()'s clean not-found message for a foreign key violation", () => {
+    const error = fakeError({ code: "23503", message: "Bill does not exist." });
+    expect(translateDatabaseError(error)).toBe("Bill does not exist.");
+  });
+
+  it("falls back to the generic message for a raw foreign-key violation", () => {
+    const error = fakeError({ code: "23503", message: "insert or update on table violates foreign key constraint" });
+    expect(translateDatabaseError(error)).toBe("A record this depends on no longer exists. Refresh and try again.");
+  });
+
+  it("translates an invalid billing period (22007) into a plain message", () => {
+    const error = fakeError({ code: "22007", message: "Billing period end date cannot be before start date." });
+    expect(translateDatabaseError(error)).toBe("Billing period end date cannot be before start date.");
+  });
+
+  it("translates a missing void reason (22023) into a plain message", () => {
+    const error = fakeError({ code: "22023", message: "A reason is required to void a bill." });
+    expect(translateDatabaseError(error)).toBe("A reason is required to void a bill.");
+  });
+
+  it("passes through void_bill()'s explicit permission message for 42501", () => {
+    const error = fakeError({ code: "42501", message: "Not authorized to void bills in this organization." });
+    expect(translateDatabaseError(error)).toBe("Not authorized to void bills in this organization.");
+  });
+
+  it("falls back to a generic permission message for a raw RLS policy violation (42501)", () => {
+    const error = fakeError({ code: "42501", message: 'new row violates row-level security policy for table "bills"' });
+    expect(translateDatabaseError(error)).toBe("You don't have permission to perform this action.");
+  });
+
   it("passes through a clean, short authored overlap-trigger message for exclusion violations", () => {
     const error = fakeError({ code: "23P01", message: "This unit is already leased for the selected dates" });
     expect(translateDatabaseError(error)).toBe("This unit is already leased for the selected dates");

@@ -1,17 +1,21 @@
 "use client";
 
 import { useState } from "react";
+import { FileText } from "lucide-react";
 import { Tabs, TabPanel } from "@/components/ui/Tabs";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { PlaceholderPage } from "@/components/layout/PlaceholderPage";
 import { LeaseOverview } from "./LeaseOverview";
 import { LeasePartiesTable } from "./LeasePartiesTable";
 import { RentRuleHistory } from "./RentRuleHistory";
 import { BillingConfigPanel } from "./BillingConfigPanel";
+import { BillTable } from "@/components/billing/BillTable";
 import type { LeaseDetail } from "@/lib/queries/leases";
 import type { LeasePartyItem } from "@/lib/queries/leaseParties";
 import type { RentRuleRow } from "@/lib/queries/rentRules";
 import type { BillingConfigRow } from "@/lib/queries/billingConfigs";
 import type { TenantPickerItem } from "@/lib/queries/tenants";
+import type { BillListItem } from "@/lib/queries/bills";
 
 const TABS = [
   { id: "overview", label: "Overview" },
@@ -28,6 +32,7 @@ export function LeaseDetailTabs({
   tenants,
   rentRules,
   billingConfigs,
+  bills,
   canWrite,
 }: {
   lease: LeaseDetail;
@@ -35,6 +40,7 @@ export function LeaseDetailTabs({
   tenants: TenantPickerItem[];
   rentRules: RentRuleRow[];
   billingConfigs: BillingConfigRow[];
+  bills: BillListItem[];
   canWrite: boolean;
 }) {
   const [activeId, setActiveId] = useState("overview");
@@ -54,7 +60,11 @@ export function LeaseDetailTabs({
         <BillingConfigPanel leaseId={lease.id} billingConfigs={billingConfigs} canWrite={canWrite} />
       </TabPanel>
       <TabPanel id="bills" activeId={activeId} idPrefix="lease-detail">
-        <PlaceholderPage title="Bills" description="Billing for this lease arrives in a later phase." />
+        {bills.length === 0 ? (
+          <EmptyState icon={FileText} title="No bills yet" description="Bills for this lease appear here once billing has run." />
+        ) : (
+          <BillTable bills={bills} />
+        )}
       </TabPanel>
       <TabPanel id="documents" activeId={activeId} idPrefix="lease-detail">
         <PlaceholderPage title="Documents" description="Document management for this lease arrives in a later phase." />

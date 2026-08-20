@@ -3,6 +3,7 @@ import { getRequestContext } from "@/lib/context/current";
 import { canWriteOrganization } from "@/lib/permissions/resolve";
 import { getTenant } from "@/lib/queries/tenants";
 import { getTenantLeases } from "@/lib/queries/leases";
+import { getTenantBills } from "@/lib/queries/bills";
 import { TenantHeaderBand } from "@/components/tenants/TenantHeaderBand";
 import { TenantTiles } from "@/components/tenants/TenantTiles";
 import { TenantDetailTabs } from "@/components/tenants/TenantDetailTabs";
@@ -25,9 +26,10 @@ export default async function TenantDetailPage({
 
   const organizationId = context.organization.organizationId;
 
-  const [tenant, leases, canWrite] = await Promise.all([
+  const [tenant, leases, bills, canWrite] = await Promise.all([
     getTenant(id, organizationId),
     getTenantLeases(id, organizationId),
+    getTenantBills(id, organizationId),
     canWriteOrganization(organizationId),
   ]);
 
@@ -42,7 +44,7 @@ export default async function TenantDetailPage({
     <div>
       <TenantHeaderBand tenant={tenant} currentLease={currentLease} canWrite={canWrite} />
       <TenantTiles tenant={tenant} activeLeaseCount={activeLeaseCount} currentLease={currentLease} />
-      <TenantDetailTabs tenant={tenant} currentLease={currentLease} leases={leases} />
+      <TenantDetailTabs tenant={tenant} currentLease={currentLease} leases={leases} bills={bills} />
     </div>
   );
 }

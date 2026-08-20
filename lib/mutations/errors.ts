@@ -6,6 +6,9 @@ const UNIQUE_VIOLATION = "23505";
 const CHECK_VIOLATION = "23514";
 const FOREIGN_KEY_VIOLATION = "23503";
 const EXCLUSION_VIOLATION = "23P01";
+const INVALID_DATETIME = "22007";
+const INVALID_PARAMETER = "22023";
+const PERMISSION_DENIED = "42501";
 
 interface UniqueConstraintMessage {
   /** Substring of the constraint name Postgres reports for this index. */
@@ -38,6 +41,14 @@ const UNIQUE_CONSTRAINT_MESSAGES: UniqueConstraintMessage[] = [
  */
 export function translateDatabaseError(error: PostgrestError): string {
   if (error.code === UNIQUE_VIOLATION) {
+    // kiraya.generate_bill() raises this errcode with its own clean,
+    // pre-authored text ("Bill already exists for this lease and billing
+    // period.") for the bills_lease_period_unique_idx violation specifically
+    // — check for a clean authored message before falling back to the
+    // constraint-name lookup, which only matches raw Postgres-generated text.
+    if (isCleanAuthoredMessage(error.message)) {
+      return error.message;
+    }
     const match = UNIQUE_CONSTRAINT_MESSAGES.find((entry) => error.message.includes(entry.constraint));
     return match?.message ?? "This record conflicts with an existing one. Check for a duplicate code.";
   }
@@ -50,6 +61,13 @@ export function translateDatabaseError(error: PostgrestError): string {
   }
 
   if (error.code === FOREIGN_KEY_VIOLATION) {
+    // kiraya.finalize_bill()/void_bill() raise this errcode with clean text
+    // ("Bill does not exist.") when the row is missing or invisible under
+    // RLS (not-found, not a leak) — pass it through; a raw FK-constraint
+    // message still falls back to the generic sentence.
+    if (isCleanAuthoredMessage(error.message)) {
+      return error.message;
+    }
     return "A record this depends on no longer exists. Refresh and try again.";
   }
 
@@ -61,6 +79,33 @@ export function translateDatabaseError(error: PostgrestError): string {
       return error.message;
     }
     return "This unit already has an overlapping lease for this period.";
+  }
+
+  if (error.code === INVALID_DATETIME) {
+    // kiraya.generate_billing_run()/generate_bill() raise this for an
+    // invalid billing period (end before start).
+    if (isCleanAuthoredMessage(error.message)) {
+      return error.message;
+    }
+    return "That date range isn't valid.";
+  }
+
+  if (error.code === INVALID_PARAMETER) {
+    // kiraya.void_bill() raises this when no reason was supplied.
+    if (isCleanAuthoredMessage(error.message)) {
+      return error.message;
+    }
+    return "That value isn't valid.";
+  }
+
+  if (error.code === PERMISSION_DENIED) {
+    // kiraya.void_bill()'s own explicit can_write_organization() check
+    // raises this with clean text; a raw RLS policy-violation message
+    // (quotes a table name) falls back to the generic sentence.
+    if (isCleanAuthoredMessage(error.message)) {
+      return error.message;
+    }
+    return "You don't have permission to perform this action.";
   }
 
   return "Something went wrong saving this. Please try again.";
