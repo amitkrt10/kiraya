@@ -5597,6 +5597,34 @@ export type Database = {
         Args: { p_organization_id: string }
         Returns: boolean
       }
+      complete_tenant_exit: {
+        Args: { p_completed_by?: string; p_tenant_exit_id: string }
+        Returns: {
+          actual_exit_date: string | null
+          created_at: string
+          exit_reference: string
+          final_meter_reading_date: string | null
+          handover_date: string | null
+          id: string
+          initiated_by: string | null
+          lease_id: string
+          metadata: Json
+          notes: string | null
+          notice_date: string | null
+          organization_id: string
+          planned_exit_date: string | null
+          reason: string | null
+          status: Database["kiraya"]["Enums"]["exit_status"]
+          tenant_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "tenant_exits"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       current_profile_id: { Args: never; Returns: string }
       days_in_month: { Args: { p_date: string }; Returns: number }
       finalize_bill: {
@@ -5798,8 +5826,20 @@ export type Database = {
         Args: { p_bill_id: string; p_created_by?: string }
         Returns: string
       }
+      post_credit_application_to_ledger: {
+        Args: { p_amount: number; p_bill_id: string; p_created_by: string }
+        Returns: string
+      }
       post_exit_settlement_to_ledger: {
         Args: { p_created_by?: string; p_exit_settlement_id: string }
+        Returns: string
+      }
+      post_payment_reversal_ledger_entry: {
+        Args: {
+          p_original_entry_id: string
+          p_reason: string
+          p_reversed_by: string
+        }
         Returns: string
       }
       post_payment_to_ledger: {

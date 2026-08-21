@@ -52,7 +52,7 @@ test.describe("cross-organization payment isolation", () => {
   test("org A can read its own payment; org B gets a clean not-found for the same id", async ({ page }) => {
     await login(page, orgAEmail!, orgAPassword!);
     await page.goto(`/app/payments/${orgAPaymentId}`);
-    await expect(page.getByText(/PAY-/)).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(/PAY-/).first()).toBeVisible({ timeout: 10_000 });
 
     await signOut(page);
     await login(page, orgBEmail!, orgBPassword!);

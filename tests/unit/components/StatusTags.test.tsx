@@ -9,6 +9,9 @@ import { BillingRunStatusTag } from "@/components/billing/BillingRunStatusTag";
 import { PaymentStatusTag } from "@/components/payments/PaymentStatusTag";
 import { DepositStatusTag } from "@/components/securityDeposits/DepositStatusTag";
 import { DepositTransactionTypeTag } from "@/components/securityDeposits/DepositTransactionTypeTag";
+import { TenantExitStatusTag } from "@/components/tenantExits/TenantExitStatusTag";
+import { ExitSettlementStatusTag } from "@/components/tenantExits/ExitSettlementStatusTag";
+import { DepositRefundStatusTag } from "@/components/tenantExits/DepositRefundStatusTag";
 
 describe("PropertyStatusTag", () => {
   it.each([
@@ -112,6 +115,43 @@ describe("DepositTransactionTypeTag", () => {
     ["ADJUSTMENT", "Adjustment"],
   ] as const)("renders the %s type as %s", (type, label) => {
     render(<DepositTransactionTypeTag type={type} />);
+    expect(screen.getByText(label)).toBeInTheDocument();
+  });
+});
+
+describe("TenantExitStatusTag", () => {
+  it.each([
+    ["INITIATED", "Initiated"],
+    ["PENDING_SETTLEMENT", "Pending Settlement"],
+    ["COMPLETED", "Completed"],
+    ["CANCELLED", "Cancelled"],
+  ] as const)("renders the %s status as %s", (status, label) => {
+    render(<TenantExitStatusTag status={status} />);
+    expect(screen.getByText(label)).toBeInTheDocument();
+  });
+});
+
+describe("ExitSettlementStatusTag", () => {
+  it.each([
+    ["DRAFT", "Draft"],
+    ["FINALIZED", "Finalized"],
+    ["SETTLED", "Settled"],
+    ["CANCELLED", "Cancelled"],
+  ] as const)("renders the %s status as %s", (status, label) => {
+    render(<ExitSettlementStatusTag status={status} />);
+    expect(screen.getByText(label)).toBeInTheDocument();
+  });
+});
+
+describe("DepositRefundStatusTag", () => {
+  it.each([
+    ["PENDING", "Pending"],
+    ["PROCESSING", "Processing"],
+    ["COMPLETED", "Completed"],
+    ["FAILED", "Failed"],
+    ["CANCELLED", "Cancelled"],
+  ])("renders the %s status as %s", (status, label) => {
+    render(<DepositRefundStatusTag status={status} />);
     expect(screen.getByText(label)).toBeInTheDocument();
   });
 });

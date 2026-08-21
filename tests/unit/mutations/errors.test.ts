@@ -193,6 +193,57 @@ describe("translateDatabaseError", () => {
     expect(translateDatabaseError(error)).toBe("This unit already has an overlapping lease for this period.");
   });
 
+  it("passes through complete_tenant_exit()'s not-found message for a foreign key violation", () => {
+    const error = fakeError({ code: "23503", message: "Tenant exit does not exist." });
+    expect(translateDatabaseError(error)).toBe("Tenant exit does not exist.");
+  });
+
+  it("passes through complete_tenant_exit()'s completion-before-finalized message", () => {
+    const error = fakeError({ code: "23514", message: "The exit settlement must be finalized before the exit can be completed." });
+    expect(translateDatabaseError(error)).toBe("The exit settlement must be finalized before the exit can be completed.");
+  });
+
+  it("passes through prevent_completed_tenant_exit_mutation()'s direct-bypass rejection", () => {
+    const error = fakeError({ code: "23514", message: "A tenant exit cannot be marked completed directly." });
+    expect(translateDatabaseError(error)).toBe("A tenant exit cannot be marked completed directly.");
+  });
+
+  it("passes through prevent_finalized_exit_settlement_mutation()'s direct-bypass rejection", () => {
+    const error = fakeError({ code: "23514", message: "An exit settlement cannot be finalized or modified directly." });
+    expect(translateDatabaseError(error)).toBe("An exit settlement cannot be finalized or modified directly.");
+  });
+
+  it("passes through prevent_finalized_exit_settlement_item_mutation()'s rejection", () => {
+    const error = fakeError({ code: "23514", message: "Items of a finalized exit settlement cannot be modified directly." });
+    expect(translateDatabaseError(error)).toBe("Items of a finalized exit settlement cannot be modified directly.");
+  });
+
+  it("passes through validate_deposit_refund_cap()'s cumulative-cap rejection", () => {
+    const error = fakeError({
+      code: "23514",
+      message: "Total deposit refunds for this exit settlement cannot exceed the settlement's refundable amount.",
+    });
+    expect(translateDatabaseError(error)).toBe(
+      "Total deposit refunds for this exit settlement cannot exceed the settlement's refundable amount.",
+    );
+  });
+
+  it("translates a duplicate exit reference into a plain-language message", () => {
+    const error = fakeError({
+      code: "23505",
+      message: 'duplicate key value violates unique constraint "tenant_exits_org_reference_unique_idx"',
+    });
+    expect(translateDatabaseError(error)).toBe("That exit reference already exists — try again.");
+  });
+
+  it("translates an already-in-progress exit for a lease into a plain-language message", () => {
+    const error = fakeError({
+      code: "23505",
+      message: 'duplicate key value violates unique constraint "tenant_exits_active_lease_unique_idx"',
+    });
+    expect(translateDatabaseError(error)).toBe("This lease already has an exit in progress.");
+  });
+
   it("passes through validate_security_deposit_transaction()'s not-found message for a foreign key violation", () => {
     const error = fakeError({ code: "23503", message: "Security deposit does not exist." });
     expect(translateDatabaseError(error)).toBe("Security deposit does not exist.");

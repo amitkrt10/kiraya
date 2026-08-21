@@ -14,12 +14,14 @@ import { PaymentTable } from "@/components/payments/PaymentTable";
 import { LedgerTable } from "@/components/ledger/LedgerTable";
 import { LedgerExportButton } from "@/components/ledger/LedgerExportButton";
 import { SecurityDepositTab } from "@/components/securityDeposits/SecurityDepositTab";
+import { TenantExitTab } from "@/components/tenantExits/TenantExitTab";
 import type { TenantRow } from "@/lib/queries/tenants";
 import type { LeaseListItem } from "@/lib/queries/leases";
 import type { BillListItem } from "@/lib/queries/bills";
 import type { PaymentListItem } from "@/lib/queries/payments";
 import type { GetLedgerEntriesResult } from "@/lib/queries/ledger";
 import type { SecurityDepositRow, SecurityDepositTransactionRow } from "@/lib/queries/securityDeposits";
+import type { TenantExitRow, ExitSettlementRow } from "@/lib/queries/tenantExits";
 
 const TABS = [
   { id: "overview", label: "Overview" },
@@ -42,6 +44,8 @@ export function TenantDetailTabs({
   deposit,
   depositHeld,
   depositTransactions,
+  tenantExit,
+  exitSettlement,
   canWrite,
 }: {
   tenant: TenantRow;
@@ -53,6 +57,8 @@ export function TenantDetailTabs({
   deposit: SecurityDepositRow | null;
   depositHeld: number;
   depositTransactions: SecurityDepositTransactionRow[];
+  tenantExit: TenantExitRow | null;
+  exitSettlement: ExitSettlementRow | null;
   canWrite: boolean;
 }) {
   const [activeId, setActiveId] = useState("overview");
@@ -123,7 +129,7 @@ export function TenantDetailTabs({
         <PlaceholderPage title="Documents" description="Document management for this tenant arrives in a later phase." />
       </TabPanel>
       <TabPanel id="exit" activeId={activeId} idPrefix="tenant-detail">
-        <PlaceholderPage title="Tenant Exit" description="The guided tenant exit workflow arrives in a later phase." />
+        <TenantExitTab currentLeaseId={currentLease?.id ?? null} exit={tenantExit} settlement={exitSettlement} canWrite={canWrite} />
       </TabPanel>
     </Tabs>
   );

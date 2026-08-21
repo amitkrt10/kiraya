@@ -8,6 +8,7 @@ import { getTenantPayments } from "@/lib/queries/payments";
 import { getTenantOutstanding, getTenantCredit } from "@/lib/queries/financial";
 import { getLedgerEntries } from "@/lib/queries/ledger";
 import { getSecurityDeposit, getSecurityDepositHeld, getSecurityDepositTransactions } from "@/lib/queries/securityDeposits";
+import { getTenantExitForTenant, getExitSettlement } from "@/lib/queries/tenantExits";
 import { TenantHeaderBand } from "@/components/tenants/TenantHeaderBand";
 import { TenantTiles } from "@/components/tenants/TenantTiles";
 import { TenantDetailTabs } from "@/components/tenants/TenantDetailTabs";
@@ -38,7 +39,7 @@ export default async function TenantDetailPage({
   const organizationId = context.organization.organizationId;
   const ledgerPageNumber = Number(ledgerPage) > 0 ? Number(ledgerPage) : 1;
 
-  const [tenant, leases, bills, payments, outstanding, credit, ledger, deposit, canWrite] = await Promise.all([
+  const [tenant, leases, bills, payments, outstanding, credit, ledger, deposit, tenantExit, canWrite] = await Promise.all([
     getTenant(id, organizationId),
     getTenantLeases(id, organizationId),
     getTenantBills(id, organizationId),
@@ -47,6 +48,7 @@ export default async function TenantDetailPage({
     getTenantCredit(id),
     getLedgerEntries({ organizationId, tenantId: id, page: ledgerPageNumber }),
     getSecurityDeposit(id, organizationId),
+    getTenantExitForTenant(id, organizationId),
     canWriteOrganization(organizationId),
   ]);
 
@@ -54,9 +56,11 @@ export default async function TenantDetailPage({
     notFound();
   }
 
-  const [depositHeld, depositTransactions] = deposit
-    ? await Promise.all([getSecurityDepositHeld(deposit.id), getSecurityDepositTransactions(deposit.id, organizationId)])
-    : [0, []];
+  const [depositHeld, depositTransactions, exitSettlement] = await Promise.all([
+    deposit ? getSecurityDepositHeld(deposit.id) : Promise.resolve(0),
+    deposit ? getSecurityDepositTransactions(deposit.id, organizationId) : Promise.resolve([]),
+    tenantExit ? getExitSettlement(tenantExit.id, organizationId) : Promise.resolve(null),
+  ]);
 
   const currentLease = leases.find((lease) => lease.status === "ACTIVE") ?? null;
   const activeLeaseCount = leases.filter((lease) => lease.status === "ACTIVE").length;
@@ -81,6 +85,8 @@ export default async function TenantDetailPage({
         deposit={deposit}
         depositHeld={depositHeld}
         depositTransactions={depositTransactions}
+        tenantExit={tenantExit}
+        exitSettlement={exitSettlement}
         canWrite={canWrite}
       />
     </div>

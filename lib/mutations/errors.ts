@@ -32,6 +32,10 @@ const UNIQUE_CONSTRAINT_MESSAGES: UniqueConstraintMessage[] = [
     message: "A payment method with this code already exists in this organization.",
   },
   { constraint: "payments_org_number_unique_idx", message: "Payment number already exists in this organization." },
+  { constraint: "tenant_exits_org_reference_unique_idx", message: "That exit reference already exists — try again." },
+  { constraint: "tenant_exits_active_lease_unique_idx", message: "This lease already has an exit in progress." },
+  { constraint: "exit_settlements_org_reference_unique_idx", message: "That settlement reference already exists — try again." },
+  { constraint: "deposit_refunds_org_reference_unique_idx", message: "That refund reference already exists — try again." },
 ];
 
 /**
