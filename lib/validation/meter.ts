@@ -7,8 +7,8 @@ export const meterFormSchema = z
   .object({
     utilityId: requiredTrimmedString("Utility"),
     scope: z.enum(CONFIGURATION_SCOPES, { error: "Choose a scope." }),
-    propertyId: z.string().trim().min(1).optional(),
-    unitId: z.string().trim().min(1).optional(),
+    propertyId: optionalTrimmedString(),
+    unitId: optionalTrimmedString(),
     meterCode: requiredTrimmedString("Meter code", 50),
     meterType: z.enum(UTILITY_CHARGING_METHODS, { error: "Choose a meter type." }),
     serialNumber: optionalTrimmedString(100),

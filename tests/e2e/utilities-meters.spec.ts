@@ -62,7 +62,20 @@ async function login(page: import("@playwright/test").Page, email: string, passw
 }
 
 async function signOut(page: import("@playwright/test").Page) {
-  await page.getByRole("button", { name: /^Account menu/ }).click();
+  // Close any dialog left open by the test first — its backdrop otherwise
+  // intercepts the Account menu click (the dialog is a native <dialog>
+  // opened via showModal(), so Escape genuinely closes it via the
+  // browser's own behavior, not a simulated keypress the app has to
+  // separately handle).
+  const openDialog = page.getByRole("dialog");
+  if (await openDialog.isVisible().catch(() => false)) {
+    await page.keyboard.press("Escape");
+    await expect(openDialog).not.toBeVisible({ timeout: 5_000 });
+  }
+
+  const accountMenu = page.getByRole("button", { name: /^Account menu/ });
+  await accountMenu.waitFor({ state: "visible", timeout: 15_000 });
+  await accountMenu.click();
   await page.getByRole("menuitem", { name: "Sign out" }).click();
   await page.waitForURL(/\/login/);
 }
@@ -78,14 +91,16 @@ test.describe("Utilities & Meters", () => {
     await login(page, orgAEmail!, orgAPassword!);
     await page.goto("/app/utilities");
     await expect(page.getByRole("heading", { name: "Utilities & Meters" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Utilities" })).toBeVisible();
+    // exact:true disambiguates from the sidebar's "Utilities & Meters" nav link, which also contains this text.
+    await expect(page.getByRole("link", { name: "Utilities", exact: true })).toBeVisible();
     await signOut(page);
   });
 
   test("2. Org A sees Meters", async ({ page }) => {
     await login(page, orgAEmail!, orgAPassword!);
     await page.goto("/app/meters");
-    await expect(page.getByRole("link", { name: "Meters" })).toBeVisible();
+    // exact:true disambiguates from the sidebar's "Utilities & Meters" nav link, which also contains this text.
+    await expect(page.getByRole("link", { name: "Meters", exact: true })).toBeVisible();
     await signOut(page);
   });
 
@@ -100,7 +115,8 @@ test.describe("Utilities & Meters", () => {
     const utilityDialog = page.getByRole("dialog", { name: "Add Utility" });
     await expect(utilityDialog).toBeVisible();
     await utilityDialog.getByLabel("Code").fill(`E2E-UTIL-${stamp}`);
-    await utilityDialog.getByLabel("Name").fill(`E2E Utility ${stamp}`);
+    // exact:true disambiguates from the "Unit Name" field, which also contains "Name".
+    await utilityDialog.getByLabel("Name", { exact: true }).fill(`E2E Utility ${stamp}`);
     await utilityDialog.getByLabel("Metered (readings apply)").check();
     await utilityDialog.getByRole("button", { name: "Add Utility" }).click();
     await expect(utilityDialog).not.toBeVisible({ timeout: 15_000 });
@@ -112,7 +128,11 @@ test.describe("Utilities & Meters", () => {
     const configDialog = page.getByRole("dialog", { name: "Add Configuration" });
     await expect(configDialog).toBeVisible();
     await configDialog.getByLabel("Unit Override").check();
-    // Unit picker defaults to the first available unit in org A; the exact unit doesn't matter for this test.
+    // The Unit select is a required field with no default selection (its placeholder option is
+    // disabled) — the browser's own HTML5 validation silently blocks submission if it's left
+    // unselected, with no error ever reaching the server action. Index 1 is the first real unit
+    // (index 0 is the disabled placeholder); the exact unit doesn't matter for this test.
+    await configDialog.locator('select[name="unitId"]').selectOption({ index: 1 });
     await configDialog.getByLabel("Effective From").fill("2026-01-01");
     await configDialog.getByLabel("Fixed Amount").fill("500");
     await configDialog.getByRole("button", { name: "Save Configuration" }).click();
@@ -126,7 +146,9 @@ test.describe("Utilities & Meters", () => {
     await meterDialog.getByLabel("Meter Code").fill(`E2E-MTR-${stamp}`);
     await meterDialog.getByLabel("Utility").selectOption({ label: `E2E Utility ${stamp}` });
     await meterDialog.getByRole("radio", { name: "Property" }).check();
-    await meterDialog.getByLabel("Property", { exact: true }).selectOption(propertyAId!);
+    // getByLabel("Property") also matches the "Property" scope radio's own label — select
+    // by the underlying element's name attribute instead of by (ambiguous) accessible name.
+    await meterDialog.locator('select[name="propertyId"]').selectOption(propertyAId!);
     await meterDialog.getByRole("button", { name: "Save Meter" }).click();
     await expect(page.getByText("Meter added.")).toBeVisible({ timeout: 15_000 });
 
@@ -160,16 +182,22 @@ test.describe("Utilities & Meters", () => {
   test("8-9. Org B cannot see Org A's utility configuration or meter", async ({ page }) => {
     await login(page, orgAEmail!, orgAPassword!);
     await page.goto("/app/utilities");
-    const firstUtilityLink = page.getByRole("link").first();
+    // Scoped to an actual table row's link — page.getByRole("link").first() would
+    // grab the sidebar's first nav link instead of a utility row.
+    const firstUtilityLink = page.locator("table tbody tr").first().getByRole("link");
     const hasUtility = await firstUtilityLink.isVisible().catch(() => false);
     test.skip(!hasUtility, "Org A has no utilities yet to probe cross-org access against.");
     await firstUtilityLink.click();
+    await page.waitForURL(/\/app\/utilities\/.+/);
     const utilityUrl = page.url();
     await signOut(page);
 
     await login(page, orgBEmail!, orgBPassword!);
     await page.goto(utilityUrl);
     await expect(page.getByText("Page not found")).toBeVisible();
+    // The not-found page has no app shell/Account menu at all — navigate to a real
+    // authenticated page first so signOut() has something to click.
+    await page.goto("/app/dashboard");
     await signOut(page);
   });
 
@@ -187,21 +215,67 @@ test.describe("Utilities & Meters", () => {
   });
 
   test("12. Batch reading failures are isolated per reading", async ({ page }) => {
-    test.setTimeout(60_000);
+    test.setTimeout(90_000);
+    const stamp = Date.now();
     await login(page, orgAEmail!, orgAPassword!);
-    await page.goto(`/app/meters/batch?propertyId=${propertyAId}&date=2026-07-01`);
 
-    const rows = page.locator("table tbody tr");
-    const rowCount = await rows.count();
-    test.skip(rowCount === 0, "Org A's property has no active meters to run a batch reading against.");
+    // Fixture setup: a dedicated utility and two property-scoped meters, so this
+    // test's outcome never depends on which pre-existing meter happens to sort
+    // first at this (heavily reused) property — a meter with NO reading history
+    // legitimately accepts any non-negative value (kiraya.validate_meter_reading()
+    // only rejects a value lower than an existing previous reading; confirmed live
+    // against this exact property's fixture meters before writing this test), so
+    // "0 is invalid" cannot be assumed for an arbitrary meter.
+    await page.goto("/app/utilities");
+    await page.getByRole("button", { name: "Add Utility" }).click();
+    const utilityDialog = page.getByRole("dialog", { name: "Add Utility" });
+    await utilityDialog.getByLabel("Code").fill(`E2E-BATCH-${stamp}`);
+    await utilityDialog.getByLabel("Name", { exact: true }).fill(`E2E Batch Utility ${stamp}`);
+    await utilityDialog.getByLabel("Metered (readings apply)").check();
+    await utilityDialog.getByRole("button", { name: "Add Utility" }).click();
+    await expect(utilityDialog).not.toBeVisible({ timeout: 15_000 });
 
-    // Enter an obviously-too-low value for the first meter (below any real prior reading) to force a per-row rejection,
-    // while leaving remaining rows untouched (Missing) — proving one row's failure never blocks another's success path.
-    const firstInput = rows.first().getByRole("spinbutton");
-    await firstInput.fill("0");
+    const meterCodeWithHistory = `E2E-BATCH-A-${stamp}`;
+    const meterCodeNoHistory = `E2E-BATCH-B-${stamp}`;
+    for (const meterCode of [meterCodeWithHistory, meterCodeNoHistory]) {
+      await page.goto("/app/meters");
+      await page.getByRole("button", { name: "Add Meter" }).click();
+      const meterDialog = page.getByRole("dialog", { name: "Add Meter" });
+      await meterDialog.getByLabel("Meter Code").fill(meterCode);
+      await meterDialog.getByLabel("Utility").selectOption({ label: `E2E Batch Utility ${stamp}` });
+      await meterDialog.getByRole("radio", { name: "Property" }).check();
+      await meterDialog.locator('select[name="propertyId"]').selectOption(propertyAId!);
+      await meterDialog.getByRole("button", { name: "Save Meter" }).click();
+      await expect(page.getByText("Meter added.")).toBeVisible({ timeout: 15_000 });
+    }
+
+    // Establish a known previous reading (100) for meter A only.
+    await page.getByRole("link", { name: meterCodeWithHistory }).click();
+    await page.waitForURL(/\/app\/meters\/.+/);
+    await page.getByRole("button", { name: "Record Reading" }).click();
+    const readingDialog = page.getByRole("dialog", { name: "Record Reading" });
+    await readingDialog.getByLabel("Reading Date").fill("2026-01-01");
+    await readingDialog.getByLabel("Reading Value").fill("100");
+    await readingDialog.getByRole("button", { name: "Save Reading" }).click();
+    await expect(page.getByText("Reading recorded.")).toBeVisible({ timeout: 15_000 });
+
+    // Batch: submit 50 (< 100, must be rejected) for meter A, and 75 (no prior reading, always valid) for meter B.
+    await page.goto(`/app/meters/batch?propertyId=${propertyAId}&date=2026-02-01`);
+    const rowA = page.locator("tr", { hasText: meterCodeWithHistory });
+    const rowB = page.locator("tr", { hasText: meterCodeNoHistory });
+    await expect(rowA).toBeVisible({ timeout: 15_000 });
+    await expect(rowB).toBeVisible();
+    await rowA.getByRole("spinbutton").fill("50");
+    await rowB.getByRole("spinbutton").fill("75");
     await page.getByRole("button", { name: "Save Readings" }).click();
 
-    await expect(page.getByText(/1 error|0 error/)).toBeVisible({ timeout: 15_000 });
+    // The rejected row shows Error with the real trigger message; the other row still saves, proving isolation.
+    await expect(rowA.getByText("Error")).toBeVisible({ timeout: 15_000 });
+    await expect(rowA.getByText(/Meter reading cannot be lower than the previous reading/)).toBeVisible();
+    await expect(rowB.getByText("Saved")).toBeVisible();
+    await expect(page.getByText("1 saved")).toBeVisible();
+    await expect(page.getByText("1 error")).toBeVisible();
+
     await signOut(page);
   });
 

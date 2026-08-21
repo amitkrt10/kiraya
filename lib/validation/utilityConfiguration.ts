@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { optionalIsoDate, requiredIsoDate } from "./shared";
+import { optionalIsoDate, optionalTrimmedString, requiredIsoDate } from "./shared";
 import { UTILITY_CHARGING_METHODS } from "./utility";
 
 /** Mirrors utility_configurations_scope_check: property_id IS NOT NULL OR unit_id IS NOT NULL. */
@@ -8,8 +8,8 @@ export const CONFIGURATION_SCOPES = ["PROPERTY", "UNIT"] as const;
 export const utilityConfigurationFormSchema = z
   .object({
     scope: z.enum(CONFIGURATION_SCOPES, { error: "Choose a scope." }),
-    propertyId: z.string().trim().min(1).optional(),
-    unitId: z.string().trim().min(1).optional(),
+    propertyId: optionalTrimmedString(),
+    unitId: optionalTrimmedString(),
     meterType: z.enum(UTILITY_CHARGING_METHODS, { error: "Choose a charging method." }),
     fixedAmount: z.preprocess(
       (val) => (val === "" || val === null || val === undefined ? undefined : val),
