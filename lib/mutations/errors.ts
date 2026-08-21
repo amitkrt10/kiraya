@@ -36,13 +36,26 @@ const UNIQUE_CONSTRAINT_MESSAGES: UniqueConstraintMessage[] = [
   { constraint: "tenant_exits_active_lease_unique_idx", message: "This lease already has an exit in progress." },
   { constraint: "exit_settlements_org_reference_unique_idx", message: "That settlement reference already exists — try again." },
   { constraint: "deposit_refunds_org_reference_unique_idx", message: "That refund reference already exists — try again." },
+  { constraint: "utilities_org_code_unique_idx", message: "A utility with this code already exists in this organization." },
+  { constraint: "utilities_system_code_unique_idx", message: "A shared utility with this code already exists." },
+  { constraint: "meters_org_code_unique_idx", message: "A meter with this code already exists in this organization." },
+  { constraint: "meter_reading_batches_org_code_unique_idx", message: "A batch with this code already exists in this organization." },
+  { constraint: "meter_readings_meter_date_unique_idx", message: "This meter already has a reading recorded for that date." },
+];
+
+const EXCLUSION_CONSTRAINT_MESSAGES: UniqueConstraintMessage[] = [
+  {
+    constraint: "utility_configurations_no_active_overlap",
+    message: "An active configuration for this utility already covers an overlapping period for this property or unit.",
+  },
 ];
 
 /**
  * Translates a Postgres error from a properties/units/owners/property_ownerships/
- * tenants/leases/lease_parties/lease_rent_rules/lease_billing_configs write into
- * a plain-language message — never surfaces raw constraint names, SQL, or
- * internal detail/hint text.
+ * tenants/leases/lease_parties/lease_rent_rules/lease_billing_configs/
+ * utilities/utility_configurations/utility_rates/meters/meter_readings/
+ * meter_reading_batches write into a plain-language message — never
+ * surfaces raw constraint names, SQL, or internal detail/hint text.
  *
  * Custom `raise exception ... message => '...'` text from this schema's own
  * triggers (e.g. "Property ownership exceeds 100%") is already
@@ -83,12 +96,15 @@ export function translateDatabaseError(error: PostgrestError): string {
 
   if (error.code === EXCLUSION_VIOLATION) {
     // kiraya.validate_lease_overlap() raises this for overlapping occupancy
-    // on the same unit — its message is already clean, authored text, but
-    // fall back to the task's suggested phrasing if it ever changes shape.
+    // on the same unit with its own clean, authored text. The raw Postgres-
+    // generated message (utility_configurations_no_active_overlap, added in
+    // P5.5B) is not pre-authored, so it needs the same constraint-name
+    // lookup UNIQUE_VIOLATION already uses below.
     if (isCleanAuthoredMessage(error.message)) {
       return error.message;
     }
-    return "This unit already has an overlapping lease for this period.";
+    const match = EXCLUSION_CONSTRAINT_MESSAGES.find((entry) => error.message.includes(entry.constraint));
+    return match?.message ?? "This unit already has an overlapping lease for this period.";
   }
 
   if (error.code === INVALID_DATETIME) {

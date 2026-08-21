@@ -1,0 +1,111 @@
+import { notFound } from "next/navigation";
+import { getRequestContext } from "@/lib/context/current";
+import { canWriteOrganization } from "@/lib/permissions/resolve";
+import { getMeter } from "@/lib/queries/meters";
+import { getMeterReadings, getLatestMeterReading, getMeterGeneratedBillItems } from "@/lib/queries/meterReadings";
+import { ActiveTag } from "@/components/utilities/ActiveTag";
+import { RecordReadingDialog } from "@/components/meters/RecordReadingDialog";
+import { MeterReadingHistoryTable } from "@/components/meters/MeterReadingHistoryTable";
+import { GeneratedBillItemsTable } from "@/components/meters/GeneratedBillItemsTable";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Clock } from "lucide-react";
+import { isUuid } from "@/lib/utils/uuid";
+
+export default async function MeterDetailPage({ params }: { params: Promise<{ meterId: string }> }) {
+  const { meterId } = await params;
+  if (!isUuid(meterId)) {
+    notFound();
+  }
+
+  const context = await getRequestContext();
+  if (!context?.organization) {
+    return null;
+  }
+
+  const organizationId = context.organization.organizationId;
+
+  const meter = await getMeter(meterId, organizationId);
+  if (!meter) {
+    notFound();
+  }
+
+  const [readings, latestReading, generatedItems, canWrite] = await Promise.all([
+    getMeterReadings(meterId, organizationId),
+    getLatestMeterReading(meterId, organizationId),
+    getMeterGeneratedBillItems(meterId, organizationId),
+    canWriteOrganization(organizationId),
+  ]);
+
+  const unitOrProperty = meter.units ? `Unit ${meter.units.unit_code}` : meter.properties ? meter.properties.name : "—";
+
+  return (
+    <div>
+      <div style={{ fontSize: 12, color: "var(--color-neutral-700)", marginBottom: 6 }}>
+        Utilities &amp; Meters / Meters / {meter.meter_code}
+      </div>
+      <div style={{ border: "2px solid var(--color-divider)", padding: "20px 24px", marginBottom: 20, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+            <span style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 18 }}>{meter.meter_code}</span>
+            <ActiveTag active={meter.is_active} />
+          </div>
+          <div style={{ fontSize: 13, color: "var(--color-neutral-700)" }}>
+            {meter.utilities?.name ?? "—"} · {meter.meter_type} · {unitOrProperty}
+            {meter.installed_on ? ` · Installed ${meter.installed_on}` : ""}
+          </div>
+        </div>
+        {canWrite ? <RecordReadingDialog meterId={meterId} meterCode={meter.meter_code} latestReading={latestReading} /> : null}
+      </div>
+
+      <div className="card" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", marginBottom: 28 }}>
+        {[
+          { label: "Multiplier", value: `${meter.multiplier}×` },
+          { label: "Initial Reading", value: meter.initial_reading ?? "—" },
+          { label: "Latest Reading", value: latestReading ? latestReading.reading_value : "—", highlight: true },
+          { label: "Reading Date", value: latestReading ? latestReading.reading_date : "—" },
+        ].map((tile, index) => (
+          <div
+            key={tile.label}
+            style={{
+              padding: "16px 18px",
+              borderRight: index < 3 ? "2px solid var(--color-divider)" : undefined,
+              background: tile.highlight ? "var(--color-neutral-100)" : undefined,
+            }}
+          >
+            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--color-neutral-700)", marginBottom: 8 }}>
+              {tile.label}
+            </div>
+            <div style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 20 }}>{tile.value}</div>
+          </div>
+        ))}
+      </div>
+
+      <h2 style={{ fontSize: 14, textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--color-neutral-700)", marginBottom: 10 }}>
+        Reading History
+      </h2>
+      {readings.length === 0 ? (
+        <EmptyState
+          icon={Clock}
+          title="No readings recorded yet"
+          description="This meter has no reading history yet. The first reading becomes the baseline for future consumption."
+        />
+      ) : (
+        <MeterReadingHistoryTable readings={readings} />
+      )}
+
+      <h2 style={{ fontSize: 14, textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--color-neutral-700)", margin: "28px 0 10px" }}>
+        Generated Utility Charges
+      </h2>
+      {generatedItems.length === 0 ? (
+        <p style={{ fontSize: 13, color: "var(--color-neutral-700)" }}>No bill has used this meter&apos;s readings yet.</p>
+      ) : (
+        <>
+          <GeneratedBillItemsTable items={generatedItems} />
+          <p style={{ fontSize: 12, color: "var(--color-neutral-700)", marginTop: 8 }}>
+            Read-only — generated by the billing run. Consumption and amount come from the finalized bill&apos;s own record, never recalculated here.
+          </p>
+        </>
+      )}
+    </div>
+  );
+}

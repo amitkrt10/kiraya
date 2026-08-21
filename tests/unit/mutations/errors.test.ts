@@ -263,4 +263,70 @@ describe("translateDatabaseError", () => {
       "Security deposit refunds must be processed through the deposit refund workflow.",
     );
   });
+
+  it("translates a duplicate utility code into a plain-language message", () => {
+    const error = fakeError({
+      code: "23505",
+      message: 'duplicate key value violates unique constraint "utilities_org_code_unique_idx"',
+    });
+    expect(translateDatabaseError(error)).toBe("A utility with this code already exists in this organization.");
+  });
+
+  it("translates a duplicate shared/system utility code into a plain-language message", () => {
+    const error = fakeError({
+      code: "23505",
+      message: 'duplicate key value violates unique constraint "utilities_system_code_unique_idx"',
+    });
+    expect(translateDatabaseError(error)).toBe("A shared utility with this code already exists.");
+  });
+
+  it("translates a duplicate meter code into a plain-language message", () => {
+    const error = fakeError({
+      code: "23505",
+      message: 'duplicate key value violates unique constraint "meters_org_code_unique_idx"',
+    });
+    expect(translateDatabaseError(error)).toBe("A meter with this code already exists in this organization.");
+  });
+
+  it("translates a duplicate meter reading batch code into a plain-language message", () => {
+    const error = fakeError({
+      code: "23505",
+      message: 'duplicate key value violates unique constraint "meter_reading_batches_org_code_unique_idx"',
+    });
+    expect(translateDatabaseError(error)).toBe("A batch with this code already exists in this organization.");
+  });
+
+  it("translates a duplicate meter reading for the same date into a plain-language message", () => {
+    const error = fakeError({
+      code: "23505",
+      message: 'duplicate key value violates unique constraint "meter_readings_meter_date_unique_idx"',
+    });
+    expect(translateDatabaseError(error)).toBe("This meter already has a reading recorded for that date.");
+  });
+
+  it("translates the P5.5B utility configuration overlap exclusion violation into a plain-language message, not the leases fallback", () => {
+    const error = fakeError({
+      code: "23P01",
+      message:
+        'conflicting key value violates exclusion constraint "utility_configurations_no_active_overlap" DETAIL:  Key (organization_id, utility_id)=(...) conflicts with existing key.',
+    });
+    expect(translateDatabaseError(error)).toBe(
+      "An active configuration for this utility already covers an overlapping period for this property or unit.",
+    );
+  });
+
+  it("passes through validate_utility_configuration_organization()'s clean not-found message for a foreign key violation", () => {
+    const error = fakeError({ code: "23503", message: "Utility configuration unit does not exist." });
+    expect(translateDatabaseError(error)).toBe("Utility configuration unit does not exist.");
+  });
+
+  it("passes through validate_meter_organization()'s clean cross-org mismatch message for a check violation", () => {
+    const error = fakeError({ code: "23514", message: "Meter organization mismatch (unit)." });
+    expect(translateDatabaseError(error)).toBe("Meter organization mismatch (unit).");
+  });
+
+  it("passes through prevent_finalized_bill_item_mutation()'s rejection", () => {
+    const error = fakeError({ code: "23514", message: "Bill items of a finalized bill cannot be modified directly." });
+    expect(translateDatabaseError(error)).toBe("Bill items of a finalized bill cannot be modified directly.");
+  });
 });
