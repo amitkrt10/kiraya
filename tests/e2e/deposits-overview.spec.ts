@@ -60,7 +60,9 @@ test.describe("Security Deposits overview", () => {
   test("org A can load /app/deposits", async ({ page }) => {
     await login(page, orgAEmail!, orgAPassword!);
     await page.goto("/app/deposits");
-    await expect(page.getByLabel("Search")).toBeVisible();
+    // exact:true disambiguates from the Topbar's global search input, whose accessible
+    // name ("Search tenants, bills, units…") otherwise matches "Search" as a substring.
+    await expect(page.getByLabel("Search", { exact: true })).toBeVisible();
     await expect(page.getByLabel("Status")).toBeVisible();
     await signOut(page);
   });
