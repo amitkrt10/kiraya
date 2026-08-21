@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { optionalIsoDate, optionalTrimmedString, requiredTrimmedString } from "./shared";
 
+/** Mirrors kiraya.exit_status — used by the Tenant Exits list filter, matching LEASE_STATUSES/PAYMENT_STATUSES convention. */
+export const EXIT_STATUSES = ["INITIATED", "PENDING_SETTLEMENT", "COMPLETED", "CANCELLED"] as const;
+
 /**
  * Mirrors kiraya.tenant_exits' own optional date columns (notice_date,
  * planned_exit_date, handover_date are all nullable) and the reason/notes

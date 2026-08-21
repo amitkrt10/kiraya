@@ -1,0 +1,118 @@
+import { test, expect } from "@playwright/test";
+
+/**
+ * P5.4F Tenant Exits list — org-wide `/app/exits` read/navigation surface,
+ * mirroring the established pattern (tenant-lease-isolation.spec.ts,
+ * tenant-exit-wizard.spec.ts): logs in with a real session and drives the
+ * actual screens, not a mocked component.
+ *
+ * NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY  (.env.local)
+ * E2E_ORG_A_EMAIL, E2E_ORG_A_PASSWORD          — a user in organization A
+ * E2E_ORG_A_EXIT_TENANT_ID                     — a tenant in org A with at
+ *                                                 least one tenant_exits row
+ *                                                 (the same fixture used by
+ *                                                 tenant-exit-wizard.spec.ts)
+ * E2E_ORG_B_EMAIL, E2E_ORG_B_PASSWORD          — a user in a *different*
+ *                                                 organization B
+ *
+ * This test intentionally does not seed data itself — it observes the real
+ * UI against real rows, not a mocked stand-in.
+ */
+
+const orgAEmail = process.env.E2E_ORG_A_EMAIL;
+const orgAPassword = process.env.E2E_ORG_A_PASSWORD;
+const exitTenantId = process.env.E2E_ORG_A_EXIT_TENANT_ID;
+const orgBEmail = process.env.E2E_ORG_B_EMAIL;
+const orgBPassword = process.env.E2E_ORG_B_PASSWORD;
+
+const hasCredentials = Boolean(orgAEmail && orgAPassword && orgBEmail && orgBPassword);
+const hasExitTenant = Boolean(exitTenantId);
+
+async function login(page: import("@playwright/test").Page, email: string, password: string) {
+  await page.goto("/login");
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Password").fill(password);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.waitForURL(/\/app\/dashboard/);
+}
+
+async function signOut(page: import("@playwright/test").Page) {
+  await page.getByRole("button", { name: /^Account menu/ }).click();
+  await page.getByRole("menuitem", { name: "Sign out" }).click();
+  await page.waitForURL(/\/login/);
+}
+
+test.describe("Tenant Exits list", () => {
+  test.skip(!hasCredentials, "Needs E2E_ORG_A_EMAIL/PASSWORD and E2E_ORG_B_EMAIL/PASSWORD — not available in this environment.");
+
+  test("org A can load /app/exits", async ({ page }) => {
+    await login(page, orgAEmail!, orgAPassword!);
+    await page.goto("/app/exits");
+    await expect(page.getByLabel("Search")).toBeVisible();
+    await expect(page.getByLabel("Status")).toBeVisible();
+    await signOut(page);
+  });
+
+  test("empty state renders when filters match nothing", async ({ page }) => {
+    await login(page, orgAEmail!, orgAPassword!);
+    await page.goto("/app/exits?q=NO-SUCH-EXIT-REFERENCE-XYZ");
+    await expect(page.getByText("No tenant exits match your filters")).toBeVisible();
+    await signOut(page);
+  });
+
+  test("org A sees its own exit, and the row links into the existing wizard", async ({ page }) => {
+    test.skip(!hasExitTenant, "Needs E2E_ORG_A_EXIT_TENANT_ID — a tenant in org A with a tenant_exits row.");
+
+    await login(page, orgAEmail!, orgAPassword!);
+
+    // Discover the exit's own reference from the tenant's Exit tab, then confirm the org-wide list surfaces the same exit.
+    await page.goto(`/app/tenants/${exitTenantId}`);
+    await page.getByRole("tab", { name: "Exit" }).click();
+    const hasExit = await page
+      .getByRole("link", { name: /View Exit|Continue Exit/ })
+      .isVisible()
+      .catch(() => false);
+    test.skip(!hasExit, "This tenant has no tenant_exits row yet — run the wizard fixture first.");
+
+    const exitReference = await page.locator("text=/^EXT-/").first().textContent();
+    expect(exitReference).toBeTruthy();
+
+    await page.goto("/app/exits");
+    await expect(page.getByRole("link", { name: exitReference!.trim() })).toBeVisible();
+
+    // Clicking the row's reference link lands inside the existing wizard shell, unaffected by this checkpoint.
+    await page.getByRole("link", { name: exitReference!.trim() }).click();
+    await page.waitForURL(/\/app\/exits\/.+\/(review|dues|deposit|adjustments|settlement|statement|refund|completion)/);
+    await expect(page.getByText(exitReference!.trim())).toBeVisible();
+
+    await signOut(page);
+  });
+
+  test("org B cannot see org A's exit in the list", async ({ page }) => {
+    test.skip(!hasExitTenant, "Needs E2E_ORG_A_EXIT_TENANT_ID — a tenant in org A with a tenant_exits row.");
+
+    await login(page, orgAEmail!, orgAPassword!);
+    await page.goto(`/app/tenants/${exitTenantId}`);
+    await page.getByRole("tab", { name: "Exit" }).click();
+    const hasExit = await page
+      .getByRole("link", { name: /View Exit|Continue Exit/ })
+      .isVisible()
+      .catch(() => false);
+    test.skip(!hasExit, "This tenant has no tenant_exits row yet — run the wizard fixture first.");
+
+    const exitReference = (await page.locator("text=/^EXT-/").first().textContent())!.trim();
+    const exitHref = await page.getByRole("link", { name: /View Exit|Continue Exit/ }).getAttribute("href");
+    await signOut(page);
+
+    await login(page, orgBEmail!, orgBPassword!);
+
+    // Org A's exit id, requested directly, is a clean not-found for org B.
+    await page.goto(exitHref!);
+    await expect(page.getByText("Page not found")).toBeVisible();
+
+    // Org A's exit reference never appears anywhere in org B's full, unfiltered list.
+    await page.goto("/app/exits");
+    await expect(page.getByRole("link", { name: exitReference })).not.toBeVisible();
+    await signOut(page);
+  });
+});

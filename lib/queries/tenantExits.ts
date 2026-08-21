@@ -8,6 +8,74 @@ export type TenantExitRow = Database["kiraya"]["Tables"]["tenant_exits"]["Row"];
 export type ExitSettlementRow = Database["kiraya"]["Tables"]["exit_settlements"]["Row"];
 export type ExitSettlementItemRow = Database["kiraya"]["Tables"]["exit_settlement_items"]["Row"];
 export type DepositRefundRow = Database["kiraya"]["Tables"]["deposit_refunds"]["Row"];
+export type TenantExitStatus = Database["kiraya"]["Enums"]["exit_status"];
+
+const DEFAULT_PAGE_SIZE = 25;
+
+function escapeIlike(term: string): string {
+  return term.replace(/[%_,]/g, (match) => `\\${match}`);
+}
+
+export interface TenantExitListItem extends TenantExitRow {
+  tenants: { display_name: string; tenant_code: string } | null;
+  leases: {
+    lease_code: string;
+    units: { unit_code: string; properties: { id: string; name: string; property_code: string } | null } | null;
+  } | null;
+}
+
+export interface GetTenantExitsParams {
+  organizationId: string;
+  search?: string;
+  status?: TenantExitStatus;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface GetTenantExitsResult {
+  exits: TenantExitListItem[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+}
+
+const TENANT_EXIT_LIST_SELECT =
+  "*, tenants(display_name, tenant_code), leases(lease_code, units(unit_code, properties(id, name, property_code)))";
+
+/**
+ * Org-wide Tenant Exits list — read/navigation only, no settlement figures.
+ * RLS (tenant_exits_select: can_access_tenant) is the actual security
+ * boundary; the organization_id filter here is defense in depth, same as
+ * every other list query in this codebase.
+ */
+export async function getTenantExits(params: GetTenantExitsParams): Promise<GetTenantExitsResult> {
+  const { organizationId, search, status } = params;
+  const page = Math.max(1, params.page ?? 1);
+  const pageSize = params.pageSize ?? DEFAULT_PAGE_SIZE;
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+
+  const supabase = await createClient();
+  let query = supabase
+    .from("tenant_exits")
+    .select(TENANT_EXIT_LIST_SELECT, { count: "exact" })
+    .eq("organization_id", organizationId);
+
+  if (search && search.trim().length > 0) {
+    query = query.ilike("exit_reference", `%${escapeIlike(search.trim())}%`);
+  }
+  if (status) {
+    query = query.eq("status", status);
+  }
+
+  const { data, error, count } = await query.order("created_at", { ascending: false }).range(from, to);
+
+  if (error) {
+    throw new Error(`Failed to load tenant exits: ${error.message}`);
+  }
+
+  return { exits: data ?? [], totalCount: count ?? 0, page, pageSize };
+}
 
 /**
  * The tenant's most recent tenant_exits row for one specific lease, if
