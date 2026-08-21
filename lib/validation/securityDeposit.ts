@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { optionalTrimmedString, requiredIsoDate, requiredTrimmedString } from "./shared";
 
+/** Mirrors kiraya.deposit_status — used by the Deposits overview list filter, matching EXIT_STATUSES/LEASE_STATUSES convention. */
+export const DEPOSIT_STATUSES = ["PENDING", "PARTIALLY_RECEIVED", "RECEIVED"] as const;
+
 /**
  * Mirrors kiraya.validate_security_deposit_transaction()'s own
  * amount>0 check (via the amount column's CHECK) and required

@@ -61,9 +61,16 @@ export function TenantDetailTabs({
   exitSettlement: ExitSettlementRow | null;
   canWrite: boolean;
 }) {
-  const [activeId, setActiveId] = useState("overview");
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  // Entry-point convenience only (e.g. the Deposits overview linking into a
+  // tenant's Deposit tab) — read once on mount, same as every other
+  // *DetailTabs component's hardcoded default; switching tabs afterward
+  // still doesn't sync back to the URL anywhere in this app.
+  const [activeId, setActiveId] = useState<string>(() => {
+    const requestedTab = searchParams.get("tab");
+    return TABS.some((tab) => tab.id === requestedTab) ? requestedTab! : "overview";
+  });
 
   function buildLedgerHref(nextPage: number): string {
     const query = new URLSearchParams(searchParams.toString());
