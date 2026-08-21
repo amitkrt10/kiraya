@@ -13,11 +13,13 @@ import { BillTable } from "@/components/billing/BillTable";
 import { PaymentTable } from "@/components/payments/PaymentTable";
 import { LedgerTable } from "@/components/ledger/LedgerTable";
 import { LedgerExportButton } from "@/components/ledger/LedgerExportButton";
+import { SecurityDepositTab } from "@/components/securityDeposits/SecurityDepositTab";
 import type { TenantRow } from "@/lib/queries/tenants";
 import type { LeaseListItem } from "@/lib/queries/leases";
 import type { BillListItem } from "@/lib/queries/bills";
 import type { PaymentListItem } from "@/lib/queries/payments";
 import type { GetLedgerEntriesResult } from "@/lib/queries/ledger";
+import type { SecurityDepositRow, SecurityDepositTransactionRow } from "@/lib/queries/securityDeposits";
 
 const TABS = [
   { id: "overview", label: "Overview" },
@@ -25,6 +27,7 @@ const TABS = [
   { id: "bills", label: "Bills" },
   { id: "payments", label: "Payments" },
   { id: "ledger", label: "Ledger" },
+  { id: "deposit", label: "Deposit" },
   { id: "documents", label: "Documents" },
   { id: "exit", label: "Exit" },
 ];
@@ -36,6 +39,10 @@ export function TenantDetailTabs({
   bills,
   payments,
   ledger,
+  deposit,
+  depositHeld,
+  depositTransactions,
+  canWrite,
 }: {
   tenant: TenantRow;
   currentLease: LeaseListItem | null;
@@ -43,6 +50,10 @@ export function TenantDetailTabs({
   bills: BillListItem[];
   payments: PaymentListItem[];
   ledger: GetLedgerEntriesResult;
+  deposit: SecurityDepositRow | null;
+  depositHeld: number;
+  depositTransactions: SecurityDepositTransactionRow[];
+  canWrite: boolean;
 }) {
   const [activeId, setActiveId] = useState("overview");
   const pathname = usePathname();
@@ -97,6 +108,16 @@ export function TenantDetailTabs({
             <Pagination page={ledger.page} pageSize={ledger.pageSize} totalCount={ledger.totalCount} buildHref={buildLedgerHref} />
           </>
         )}
+      </TabPanel>
+      <TabPanel id="deposit" activeId={activeId} idPrefix="tenant-detail">
+        <SecurityDepositTab
+          deposit={deposit}
+          held={depositHeld}
+          transactions={depositTransactions}
+          canWrite={canWrite}
+          tenantId={tenant.id}
+          leaseId={currentLease?.id ?? null}
+        />
       </TabPanel>
       <TabPanel id="documents" activeId={activeId} idPrefix="tenant-detail">
         <PlaceholderPage title="Documents" description="Document management for this tenant arrives in a later phase." />

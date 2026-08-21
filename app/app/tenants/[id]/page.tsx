@@ -7,6 +7,7 @@ import { getTenantBills } from "@/lib/queries/bills";
 import { getTenantPayments } from "@/lib/queries/payments";
 import { getTenantOutstanding, getTenantCredit } from "@/lib/queries/financial";
 import { getLedgerEntries } from "@/lib/queries/ledger";
+import { getSecurityDeposit, getSecurityDepositHeld, getSecurityDepositTransactions } from "@/lib/queries/securityDeposits";
 import { TenantHeaderBand } from "@/components/tenants/TenantHeaderBand";
 import { TenantTiles } from "@/components/tenants/TenantTiles";
 import { TenantDetailTabs } from "@/components/tenants/TenantDetailTabs";
@@ -37,7 +38,7 @@ export default async function TenantDetailPage({
   const organizationId = context.organization.organizationId;
   const ledgerPageNumber = Number(ledgerPage) > 0 ? Number(ledgerPage) : 1;
 
-  const [tenant, leases, bills, payments, outstanding, credit, ledger, canWrite] = await Promise.all([
+  const [tenant, leases, bills, payments, outstanding, credit, ledger, deposit, canWrite] = await Promise.all([
     getTenant(id, organizationId),
     getTenantLeases(id, organizationId),
     getTenantBills(id, organizationId),
@@ -45,12 +46,17 @@ export default async function TenantDetailPage({
     getTenantOutstanding(id),
     getTenantCredit(id),
     getLedgerEntries({ organizationId, tenantId: id, page: ledgerPageNumber }),
+    getSecurityDeposit(id, organizationId),
     canWriteOrganization(organizationId),
   ]);
 
   if (!tenant) {
     notFound();
   }
+
+  const [depositHeld, depositTransactions] = deposit
+    ? await Promise.all([getSecurityDepositHeld(deposit.id), getSecurityDepositTransactions(deposit.id, organizationId)])
+    : [0, []];
 
   const currentLease = leases.find((lease) => lease.status === "ACTIVE") ?? null;
   const activeLeaseCount = leases.filter((lease) => lease.status === "ACTIVE").length;
@@ -72,6 +78,10 @@ export default async function TenantDetailPage({
         bills={bills}
         payments={payments}
         ledger={ledger}
+        deposit={deposit}
+        depositHeld={depositHeld}
+        depositTransactions={depositTransactions}
+        canWrite={canWrite}
       />
     </div>
   );

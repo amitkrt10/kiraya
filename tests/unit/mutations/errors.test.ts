@@ -192,4 +192,24 @@ describe("translateDatabaseError", () => {
     });
     expect(translateDatabaseError(error)).toBe("This unit already has an overlapping lease for this period.");
   });
+
+  it("passes through validate_security_deposit_transaction()'s not-found message for a foreign key violation", () => {
+    const error = fakeError({ code: "23503", message: "Security deposit does not exist." });
+    expect(translateDatabaseError(error)).toBe("Security deposit does not exist.");
+  });
+
+  it("passes through validate_security_deposit_transaction()'s exceeds-held-amount message for a check violation", () => {
+    const error = fakeError({ code: "23514", message: "Security deposit transaction exceeds amount currently held." });
+    expect(translateDatabaseError(error)).toBe("Security deposit transaction exceeds amount currently held.");
+  });
+
+  it("passes through the P5.4B direct-refund-insert rejection message for a check violation", () => {
+    const error = fakeError({
+      code: "23514",
+      message: "Security deposit refunds must be processed through the deposit refund workflow.",
+    });
+    expect(translateDatabaseError(error)).toBe(
+      "Security deposit refunds must be processed through the deposit refund workflow.",
+    );
+  });
 });

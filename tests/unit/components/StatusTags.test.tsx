@@ -7,6 +7,8 @@ import { LeaseStatusTag } from "@/components/leases/LeaseStatusTag";
 import { BillStatusTag } from "@/components/billing/BillStatusTag";
 import { BillingRunStatusTag } from "@/components/billing/BillingRunStatusTag";
 import { PaymentStatusTag } from "@/components/payments/PaymentStatusTag";
+import { DepositStatusTag } from "@/components/securityDeposits/DepositStatusTag";
+import { DepositTransactionTypeTag } from "@/components/securityDeposits/DepositTransactionTypeTag";
 
 describe("PropertyStatusTag", () => {
   it.each([
@@ -87,6 +89,29 @@ describe("PaymentStatusTag", () => {
     ["REVERSED", "Reversed"],
   ] as const)("renders the %s status as %s", (status, label) => {
     render(<PaymentStatusTag status={status} />);
+    expect(screen.getByText(label)).toBeInTheDocument();
+  });
+});
+
+describe("DepositStatusTag", () => {
+  it.each([
+    ["PENDING", "Pending"],
+    ["PARTIALLY_RECEIVED", "Partially Received"],
+    ["RECEIVED", "Received"],
+  ] as const)("renders the %s status as %s", (status, label) => {
+    render(<DepositStatusTag status={status} />);
+    expect(screen.getByText(label)).toBeInTheDocument();
+  });
+});
+
+describe("DepositTransactionTypeTag", () => {
+  it.each([
+    ["RECEIPT", "Receipt"],
+    ["DEDUCTION", "Deduction"],
+    ["REFUND", "Refund"],
+    ["ADJUSTMENT", "Adjustment"],
+  ] as const)("renders the %s type as %s", (type, label) => {
+    render(<DepositTransactionTypeTag type={type} />);
     expect(screen.getByText(label)).toBeInTheDocument();
   });
 });
