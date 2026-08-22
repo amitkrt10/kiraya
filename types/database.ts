@@ -1179,8 +1179,12 @@ export type Database = {
       exit_settlements: {
         Row: {
           created_at: string
+          credit_applied: number
+          credit_origin_refundable: number
           currency_code: string
+          deposit_consumed: number
           deposit_deduction: number
+          deposit_origin_refundable: number
           final_amount_due: number
           final_amount_refundable: number
           final_charges: number
@@ -1202,8 +1206,12 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          credit_applied?: number
+          credit_origin_refundable?: number
           currency_code?: string
+          deposit_consumed?: number
           deposit_deduction?: number
+          deposit_origin_refundable?: number
           final_amount_due?: number
           final_amount_refundable?: number
           final_charges?: number
@@ -1225,8 +1233,12 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          credit_applied?: number
+          credit_origin_refundable?: number
           currency_code?: string
+          deposit_consumed?: number
           deposit_deduction?: number
+          deposit_origin_refundable?: number
           final_amount_due?: number
           final_amount_refundable?: number
           final_charges?: number
@@ -1939,6 +1951,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           credit_amount: number
+          credit_refund_id: string | null
           currency_code: string
           debit_amount: number
           description: string
@@ -1954,6 +1967,7 @@ export type Database = {
           payment_id: string | null
           reference_code: string | null
           reverses_entry_id: string | null
+          security_deposit_transaction_id: string | null
           tenant_id: string
         }
         Insert: {
@@ -1961,6 +1975,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           credit_amount?: number
+          credit_refund_id?: string | null
           currency_code?: string
           debit_amount?: number
           description: string
@@ -1976,6 +1991,7 @@ export type Database = {
           payment_id?: string | null
           reference_code?: string | null
           reverses_entry_id?: string | null
+          security_deposit_transaction_id?: string | null
           tenant_id: string
         }
         Update: {
@@ -1983,6 +1999,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           credit_amount?: number
+          credit_refund_id?: string | null
           currency_code?: string
           debit_amount?: number
           description?: string
@@ -1998,6 +2015,7 @@ export type Database = {
           payment_id?: string | null
           reference_code?: string | null
           reverses_entry_id?: string | null
+          security_deposit_transaction_id?: string | null
           tenant_id?: string
         }
         Relationships: [
@@ -2020,6 +2038,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ledger_entries_credit_refund_id_fkey"
+            columns: ["credit_refund_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_credit_refunds"
             referencedColumns: ["id"]
           },
           {
@@ -2112,6 +2137,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_tenant_ledger"
             referencedColumns: ["ledger_entry_id"]
+          },
+          {
+            foreignKeyName: "ledger_entries_security_deposit_transaction_id_fkey"
+            columns: ["security_deposit_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "security_deposit_transactions"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "ledger_entries_tenant_id_fkey"
@@ -3764,6 +3796,158 @@ export type Database = {
           },
           {
             foreignKeyName: "security_deposits_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_outstanding"
+            referencedColumns: ["tenant_id"]
+          },
+        ]
+      }
+      tenant_credit_refunds: {
+        Row: {
+          amount: number
+          created_at: string
+          currency_code: string
+          exit_settlement_id: string
+          id: string
+          metadata: Json
+          notes: string | null
+          organization_id: string
+          payment_method_id: string | null
+          processed_by: string | null
+          refund_date: string | null
+          refund_reference: string
+          status: string
+          tenant_exit_id: string
+          tenant_id: string
+          transaction_reference: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency_code: string
+          exit_settlement_id: string
+          id?: string
+          metadata?: Json
+          notes?: string | null
+          organization_id: string
+          payment_method_id?: string | null
+          processed_by?: string | null
+          refund_date?: string | null
+          refund_reference: string
+          status?: string
+          tenant_exit_id: string
+          tenant_id: string
+          transaction_reference?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency_code?: string
+          exit_settlement_id?: string
+          id?: string
+          metadata?: Json
+          notes?: string | null
+          organization_id?: string
+          payment_method_id?: string | null
+          processed_by?: string | null
+          refund_date?: string | null
+          refund_reference?: string
+          status?: string
+          tenant_exit_id?: string
+          tenant_id?: string
+          transaction_reference?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_credit_refunds_exit_settlement_id_fkey"
+            columns: ["exit_settlement_id"]
+            isOneToOne: false
+            referencedRelation: "exit_settlements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_credit_refunds_exit_settlement_id_fkey"
+            columns: ["exit_settlement_id"]
+            isOneToOne: false
+            referencedRelation: "v_exit_tenant_dues"
+            referencedColumns: ["exit_settlement_id"]
+          },
+          {
+            foreignKeyName: "tenant_credit_refunds_exit_settlement_id_fkey"
+            columns: ["exit_settlement_id"]
+            isOneToOne: false
+            referencedRelation: "v_exit_tenant_statement"
+            referencedColumns: ["exit_settlement_id"]
+          },
+          {
+            foreignKeyName: "tenant_credit_refunds_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_credit_refunds_payment_method_id_fkey"
+            columns: ["payment_method_id"]
+            isOneToOne: false
+            referencedRelation: "payment_methods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_credit_refunds_payment_method_id_fkey"
+            columns: ["payment_method_id"]
+            isOneToOne: false
+            referencedRelation: "v_collection_by_payment_method"
+            referencedColumns: ["payment_method_id"]
+          },
+          {
+            foreignKeyName: "tenant_credit_refunds_payment_method_id_fkey"
+            columns: ["payment_method_id"]
+            isOneToOne: false
+            referencedRelation: "v_payment_method_collection"
+            referencedColumns: ["payment_method_id"]
+          },
+          {
+            foreignKeyName: "tenant_credit_refunds_tenant_exit_id_fkey"
+            columns: ["tenant_exit_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_exits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_credit_refunds_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_credit_refunds_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_exit_tenant_dues"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "tenant_credit_refunds_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_lease_expiry_alerts"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "tenant_credit_refunds_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_milestones"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "tenant_credit_refunds_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "v_tenant_outstanding"
@@ -5538,8 +5722,12 @@ export type Database = {
         Args: { p_exit_settlement_id: string }
         Returns: {
           created_at: string
+          credit_applied: number
+          credit_origin_refundable: number
           currency_code: string
+          deposit_consumed: number
           deposit_deduction: number
+          deposit_origin_refundable: number
           final_amount_due: number
           final_amount_refundable: number
           final_charges: number
@@ -5670,8 +5858,12 @@ export type Database = {
         Args: { p_exit_settlement_id: string; p_finalized_by: string }
         Returns: {
           created_at: string
+          credit_applied: number
+          credit_origin_refundable: number
           currency_code: string
+          deposit_consumed: number
           deposit_deduction: number
+          deposit_origin_refundable: number
           final_amount_due: number
           final_amount_refundable: number
           final_charges: number
@@ -5830,6 +6022,18 @@ export type Database = {
         Args: { p_amount: number; p_bill_id: string; p_created_by: string }
         Returns: string
       }
+      post_credit_refund_to_ledger: {
+        Args: { p_created_by?: string; p_credit_refund_id: string }
+        Returns: string
+      }
+      post_deposit_application_to_ledger: {
+        Args: {
+          p_created_by?: string
+          p_exit_settlement_id: string
+          p_security_deposit_transaction_id: string
+        }
+        Returns: string
+      }
       post_exit_settlement_to_ledger: {
         Args: { p_created_by?: string; p_exit_settlement_id: string }
         Returns: string
@@ -5945,6 +6149,8 @@ export type Database = {
         | "DEPOSIT_RECEIPT"
         | "DEPOSIT_DEDUCTION"
         | "DEPOSIT_REFUND"
+        | "DEPOSIT_APPLICATION"
+        | "CREDIT_REFUND"
       member_status: "INVITED" | "ACTIVE" | "SUSPENDED" | "REMOVED"
       message_status:
         | "QUEUED"
@@ -6138,6 +6344,8 @@ export const Constants = {
         "DEPOSIT_RECEIPT",
         "DEPOSIT_DEDUCTION",
         "DEPOSIT_REFUND",
+        "DEPOSIT_APPLICATION",
+        "CREDIT_REFUND",
       ],
       member_status: ["INVITED", "ACTIVE", "SUSPENDED", "REMOVED"],
       message_status: [

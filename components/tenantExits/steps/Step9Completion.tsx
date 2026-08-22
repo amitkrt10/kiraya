@@ -9,16 +9,24 @@ import { useToast } from "@/components/ui/Toast";
 import { ExitSettlementStatusTag } from "@/components/tenantExits/ExitSettlementStatusTag";
 import { TenantExitStatusTag } from "@/components/tenantExits/TenantExitStatusTag";
 import { completeTenantExitAction } from "@/lib/actions/tenantExits";
-import type { TenantExitRow, ExitSettlementRow, DepositRefundRow } from "@/lib/queries/tenantExits";
+import type { TenantExitRow, ExitSettlementRow, DepositRefundRow, TenantCreditRefundRow } from "@/lib/queries/tenantExits";
 
 function formatCurrency(amount: number, currencyCode: string): string {
   return new Intl.NumberFormat("en-IN", { style: "currency", currency: currencyCode, maximumFractionDigits: 2 }).format(amount);
 }
 
+/**
+ * P5.7G: the single generic "Refund" line is split into Credit Refund /
+ * Deposit Refund, each showing its own completed total independently.
+ * complete_tenant_exit() remains unchanged and is never gated here on
+ * refund completion or on Amount Payable being zero — the backend
+ * doesn't require either, so the UI must not invent that requirement.
+ */
 export function Step9Completion({
   exit,
   settlement,
-  completedRefunds,
+  completedCreditRefunds,
+  completedDepositRefunds,
   tenantName,
   unitLabel,
   leaseCode,
@@ -27,7 +35,8 @@ export function Step9Completion({
 }: {
   exit: TenantExitRow;
   settlement: ExitSettlementRow;
-  completedRefunds: DepositRefundRow[];
+  completedCreditRefunds: TenantCreditRefundRow[];
+  completedDepositRefunds: DepositRefundRow[];
   tenantName: string;
   unitLabel: string;
   leaseCode: string;
@@ -40,7 +49,8 @@ export function Step9Completion({
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | undefined>(undefined);
 
-  const totalRefunded = completedRefunds.reduce((sum, refund) => sum + refund.amount, 0);
+  const totalCreditRefunded = completedCreditRefunds.reduce((sum, refund) => sum + refund.amount, 0);
+  const totalDepositRefunded = completedDepositRefunds.reduce((sum, refund) => sum + refund.amount, 0);
   const isCompleted = exit.status === "COMPLETED";
 
   async function handleComplete() {
@@ -79,9 +89,21 @@ export function Step9Completion({
           <ExitSettlementStatusTag status={settlement.status} />
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid var(--color-neutral-300)" }}>
-          <span style={{ color: "var(--color-neutral-700)" }}>Refund</span>
+          <span style={{ color: "var(--color-neutral-700)" }}>Credit Refund</span>
           <span style={{ fontWeight: 600 }}>
-            {completedRefunds.length > 0 ? `${formatCurrency(totalRefunded, settlement.currency_code)} recorded` : "None recorded"}
+            {completedCreditRefunds.length > 0 ? `${formatCurrency(totalCreditRefunded, settlement.currency_code)} recorded` : "None recorded"}
+          </span>
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid var(--color-neutral-300)" }}>
+          <span style={{ color: "var(--color-neutral-700)" }}>Deposit Refund</span>
+          <span style={{ fontWeight: 600 }}>
+            {completedDepositRefunds.length > 0 ? `${formatCurrency(totalDepositRefunded, settlement.currency_code)} recorded` : "None recorded"}
+          </span>
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid var(--color-neutral-300)" }}>
+          <span style={{ color: "var(--color-neutral-700)" }}>Amount Payable</span>
+          <span style={{ fontWeight: 600 }}>
+            {settlement.final_amount_due > 0 ? `${formatCurrency(settlement.final_amount_due, settlement.currency_code)} outstanding` : "None outstanding"}
           </span>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0" }}>
@@ -128,8 +150,9 @@ export function Step9Completion({
           </ul>
         </div>
         <p style={{ fontSize: 12, color: "var(--color-neutral-700)" }}>
-          This finalizes the exit. It cannot be undone. No further accounting action is taken beyond what&apos;s listed above —
-          the settlement and any refund were already recorded in the previous steps.
+          This finalizes the exit. It cannot be undone. Any outstanding Amount Payable or unrecorded refund does not
+          block completion — the settlement and any refunds already recorded remain exactly as they are, and either
+          refund can still be recorded afterward.
         </p>
       </Dialog>
     </>

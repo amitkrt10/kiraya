@@ -5,6 +5,7 @@ import type {
   ExitSettlementRow,
   ExitSettlementItemRow,
   DepositRefundRow,
+  TenantCreditRefundRow,
 } from "@/lib/queries/tenantExits";
 import { translateDatabaseError, type MutationResult } from "./errors";
 
@@ -210,6 +211,77 @@ export async function completeDepositRefund(depositRefundId: string, refundDate?
     .from("deposit_refunds")
     .update({ status: "COMPLETED", refund_date: refundDate ?? new Date().toISOString().slice(0, 10) })
     .eq("id", depositRefundId)
+    .select("*")
+    .single();
+
+  if (error) {
+    return { error: translateDatabaseError(error) };
+  }
+  return { data };
+}
+
+interface CreateCreditRefundArgs {
+  organizationId: string;
+  tenantExitId: string;
+  exitSettlementId: string;
+  tenantId: string;
+  amount: number;
+  currencyCode: string;
+  refundDate?: string;
+  paymentMethodId?: string;
+  transactionReference?: string;
+  notes?: string;
+}
+
+/**
+ * Direct INSERT into tenant_credit_refunds (P5.7F/G, Pool A) — mirrors
+ * createDepositRefund() exactly, minus any security_deposit_id field
+ * (there is none on this table, deliberately — P5.7E-LOCK §7). `amount`
+ * is supplied by the caller but the action layer always derives it from
+ * the settlement's own credit_origin_refundable minus already-recorded
+ * credit refunds; kiraya.validate_credit_refund_cap() is the actual
+ * enforcement regardless of what's passed.
+ */
+export async function createCreditRefund(args: CreateCreditRefundArgs): Promise<MutationResult<TenantCreditRefundRow>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("tenant_credit_refunds")
+    .insert({
+      organization_id: args.organizationId,
+      tenant_exit_id: args.tenantExitId,
+      exit_settlement_id: args.exitSettlementId,
+      tenant_id: args.tenantId,
+      refund_reference: generateReference("CRF"),
+      amount: args.amount,
+      currency_code: args.currencyCode,
+      refund_date: args.refundDate ?? null,
+      payment_method_id: args.paymentMethodId ?? null,
+      transaction_reference: args.transactionReference ?? null,
+      notes: args.notes ?? null,
+    })
+    .select("*")
+    .single();
+
+  if (error) {
+    return { error: translateDatabaseError(error) };
+  }
+  return { data };
+}
+
+/**
+ * Transitions a tenant_credit_refunds row to COMPLETED via direct UPDATE
+ * — mirrors completeDepositRefund() exactly. kiraya.
+ * process_completed_credit_refund() is an AFTER UPDATE trigger reacting
+ * to this exact transition, posting the CREDIT_REFUND ledger entry
+ * itself (never security_deposit_transactions — Pool A never touches
+ * the deposit subledger).
+ */
+export async function completeCreditRefund(creditRefundId: string, refundDate?: string): Promise<MutationResult<TenantCreditRefundRow>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("tenant_credit_refunds")
+    .update({ status: "COMPLETED", refund_date: refundDate ?? new Date().toISOString().slice(0, 10) })
+    .eq("id", creditRefundId)
     .select("*")
     .single();
 

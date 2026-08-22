@@ -81,3 +81,31 @@ export function parseCreateDepositRefundFormData(formData: FormData) {
     notes: formData.get("notes"),
   });
 }
+
+/**
+ * tenant_credit_refunds creation — Pool A (P5.7F/P5.7G), structurally
+ * identical to the deposit refund form above (same fields, same
+ * amount-never-a-form-field convention). The mutation always derives
+ * amount from the settlement's own credit_origin_refundable minus any
+ * already-recorded credit refunds, matching kiraya.
+ * validate_credit_refund_cap()'s cumulative cap. This schema has no
+ * security_deposit_id/securityDepositId concept anywhere — that absence
+ * is deliberate, not an oversight (P5.7E-LOCK §7).
+ */
+export const createCreditRefundFormSchema = z.object({
+  refundDate: optionalIsoDate(),
+  paymentMethodId: optionalTrimmedString(),
+  transactionReference: optionalTrimmedString(200),
+  notes: optionalTrimmedString(1000),
+});
+
+export type CreateCreditRefundFormValues = z.infer<typeof createCreditRefundFormSchema>;
+
+export function parseCreateCreditRefundFormData(formData: FormData) {
+  return createCreditRefundFormSchema.safeParse({
+    refundDate: formData.get("refundDate"),
+    paymentMethodId: formData.get("paymentMethodId"),
+    transactionReference: formData.get("transactionReference"),
+    notes: formData.get("notes"),
+  });
+}

@@ -11,6 +11,7 @@ import {
   getExitSettlementItems,
   getExitTenantStatement,
   getDepositRefunds,
+  getTenantCreditRefunds,
   getOutstandingBillsForTenant,
 } from "@/lib/queries/tenantExits";
 import { getTenantOutstanding } from "@/lib/queries/financial";
@@ -143,42 +144,70 @@ export default async function TenantExitStepPage({ params }: { params: Promise<{
         if (!statement) {
           notFound();
         }
-        return <Step7Statement statement={statement} currencyCode={settlement!.currency_code} nextHref={stepHref(8)} backHref={stepHref(6)} />;
+        return (
+          <Step7Statement
+            statement={statement}
+            settlement={settlement!}
+            currencyCode={settlement!.currency_code}
+            nextHref={stepHref(8)}
+            backHref={stepHref(6)}
+          />
+        );
       }
       case "refund": {
         const deposit = await getSecurityDeposit(exit!.tenant_id, organizationId);
-        const [held, existingRefunds, paymentMethods] = await Promise.all([
+        const [held, depositRefunds, creditRefunds, paymentMethods] = await Promise.all([
           deposit ? getSecurityDepositHeld(deposit.id) : Promise.resolve(0),
           getDepositRefunds(settlement!.id, organizationId),
+          getTenantCreditRefunds(settlement!.id, organizationId),
           getActivePaymentMethodsForPicker(organizationId),
         ]);
-        const alreadyRecorded = existingRefunds
+
+        // Each pool's "remaining" is a subtraction of two already-authoritative
+        // numbers (the settlement's own origin-tagged figure, and the sum of
+        // already-fetched refund rows) — not a financial calculation, matching
+        // the established pre-P5.7 convention. The server action re-derives and
+        // caps this again regardless.
+        const alreadyRecordedDeposit = depositRefunds
           .filter((r) => r.status !== "CANCELLED" && r.status !== "FAILED")
           .reduce((sum, r) => sum + r.amount, 0);
-        const remainingRefundable = Math.max(0, Math.round((settlement!.final_amount_refundable - alreadyRecorded) * 100) / 100);
+        const remainingDepositRefundable = Math.max(0, Math.round((settlement!.deposit_origin_refundable - alreadyRecordedDeposit) * 100) / 100);
+
+        const alreadyRecordedCredit = creditRefunds
+          .filter((r) => r.status !== "CANCELLED" && r.status !== "FAILED")
+          .reduce((sum, r) => sum + r.amount, 0);
+        const remainingCreditRefundable = Math.max(0, Math.round((settlement!.credit_origin_refundable - alreadyRecordedCredit) * 100) / 100);
+
         return (
           <Step8Refund
             settlement={settlement!}
-            depositHeld={held}
-            hasDeposit={Boolean(deposit)}
-            existingRefunds={existingRefunds}
-            remainingRefundable={remainingRefundable}
             paymentMethods={paymentMethods}
             canWrite={canWrite}
             tenantId={exit!.tenant_id}
+            creditRefunds={creditRefunds}
+            remainingCreditRefundable={remainingCreditRefundable}
+            hasDeposit={Boolean(deposit)}
+            depositHeld={held}
+            depositRefunds={depositRefunds}
+            remainingDepositRefundable={remainingDepositRefundable}
             nextHref={stepHref(9)}
             backHref={stepHref(7)}
           />
         );
       }
       case "completion": {
-        const refunds = await getDepositRefunds(settlement!.id, organizationId);
-        const completedRefunds = refunds.filter((r) => r.status === "COMPLETED");
+        const [depositRefunds, creditRefunds] = await Promise.all([
+          getDepositRefunds(settlement!.id, organizationId),
+          getTenantCreditRefunds(settlement!.id, organizationId),
+        ]);
+        const completedDepositRefunds = depositRefunds.filter((r) => r.status === "COMPLETED");
+        const completedCreditRefunds = creditRefunds.filter((r) => r.status === "COMPLETED");
         return (
           <Step9Completion
             exit={exit!}
             settlement={settlement!}
-            completedRefunds={completedRefunds}
+            completedCreditRefunds={completedCreditRefunds}
+            completedDepositRefunds={completedDepositRefunds}
             tenantName={tenantName}
             unitLabel={unitLabel}
             leaseCode={lease!.lease_code}

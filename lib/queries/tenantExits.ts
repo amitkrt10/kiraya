@@ -8,6 +8,7 @@ export type TenantExitRow = Database["kiraya"]["Tables"]["tenant_exits"]["Row"];
 export type ExitSettlementRow = Database["kiraya"]["Tables"]["exit_settlements"]["Row"];
 export type ExitSettlementItemRow = Database["kiraya"]["Tables"]["exit_settlement_items"]["Row"];
 export type DepositRefundRow = Database["kiraya"]["Tables"]["deposit_refunds"]["Row"];
+export type TenantCreditRefundRow = Database["kiraya"]["Tables"]["tenant_credit_refunds"]["Row"];
 export type TenantExitStatus = Database["kiraya"]["Enums"]["exit_status"];
 
 const DEFAULT_PAGE_SIZE = 25;
@@ -212,6 +213,29 @@ export async function getDepositRefunds(exitSettlementId: string, organizationId
 
   if (error) {
     throw new Error(`Failed to load deposit refunds: ${error.message}`);
+  }
+
+  return data ?? [];
+}
+
+/**
+ * Every tenant-credit refund recorded against a settlement — Pool A
+ * (P5.7F/G), mirrors getDepositRefunds() exactly (own table, own
+ * backend-ordered read). Never queried alongside deposit_refunds in a
+ * single call — the two histories are kept structurally separate all
+ * the way to the UI.
+ */
+export async function getTenantCreditRefunds(exitSettlementId: string, organizationId: string): Promise<TenantCreditRefundRow[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("tenant_credit_refunds")
+    .select("*")
+    .eq("exit_settlement_id", exitSettlementId)
+    .eq("organization_id", organizationId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    throw new Error(`Failed to load tenant credit refunds: ${error.message}`);
   }
 
   return data ?? [];

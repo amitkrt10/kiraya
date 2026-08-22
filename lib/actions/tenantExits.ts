@@ -9,6 +9,7 @@ import {
   parseInitiateTenantExitFormData,
   parseAddSettlementAdjustmentFormData,
   parseCreateDepositRefundFormData,
+  parseCreateCreditRefundFormData,
 } from "@/lib/validation/tenantExit";
 import {
   initiateTenantExit,
@@ -17,10 +18,12 @@ import {
   finalizeExitSettlement,
   createDepositRefund,
   completeDepositRefund,
+  createCreditRefund,
+  completeCreditRefund,
   confirmActualExitDateIfMissing,
   completeTenantExit,
 } from "@/lib/mutations/tenantExits";
-import { getExitSettlementById, getDepositRefunds } from "@/lib/queries/tenantExits";
+import { getExitSettlementById, getDepositRefunds, getTenantCreditRefunds } from "@/lib/queries/tenantExits";
 import { getSecurityDeposit } from "@/lib/queries/securityDeposits";
 
 export interface TenantExitActionState {
@@ -135,13 +138,15 @@ export async function finalizeExitSettlementAction(exitSettlementId: string, ten
 }
 
 /**
- * Amount is never taken from the client — it's derived here from the
- * settlement's own authoritative final_amount_refundable minus whatever
- * has already been recorded (non-CANCELLED/FAILED) against it, the exact
- * remaining capacity kiraya.validate_deposit_refund_cap() enforces. This
- * is a read of already-authoritative numbers, not a financial calculation:
- * both final_amount_refundable and every existing refund's amount are
- * backend values, simply subtracted to show what's left.
+ * Pool B (deposit-origin) only. Amount is never taken from the client —
+ * it's derived here from the settlement's own authoritative
+ * deposit_origin_refundable (P5.7F — NEVER the combined
+ * final_amount_refundable, which can also contain Pool A/credit-origin
+ * money) minus whatever has already been recorded (non-CANCELLED/FAILED)
+ * against it, the exact remaining capacity kiraya.
+ * validate_deposit_refund_cap() enforces (itself now capped against the
+ * deposit's live held balance, not a settlement figure). This is a read
+ * of already-authoritative numbers, not a financial calculation.
  */
 export async function createDepositRefundAction(
   exitSettlementId: string,
@@ -175,10 +180,10 @@ export async function createDepositRefundAction(
   const alreadyRecorded = existingRefunds
     .filter((refund) => refund.status !== "CANCELLED" && refund.status !== "FAILED")
     .reduce((sum, refund) => sum + refund.amount, 0);
-  const remaining = Math.round((settlement.final_amount_refundable - alreadyRecorded) * 100) / 100;
+  const remaining = Math.round((settlement.deposit_origin_refundable - alreadyRecorded) * 100) / 100;
 
   if (remaining <= 0) {
-    return { error: "There is no refundable amount remaining on this settlement." };
+    return { error: "There is no deposit-origin refundable amount remaining on this settlement." };
   }
 
   const result = await createDepositRefund({
@@ -198,6 +203,72 @@ export async function createDepositRefundAction(
   }
 
   const completeResult = await completeDepositRefund(result.data.id, parsed.data.refundDate);
+  if (completeResult.error) {
+    return { error: completeResult.error };
+  }
+
+  revalidatePath(`/app/tenants/${tenantId}`);
+  return { success: true };
+}
+
+/**
+ * Pool A (credit-origin) only — mirrors createDepositRefundAction()
+ * exactly, scoped to kiraya.exit_settlements.credit_origin_refundable
+ * instead. Never creates a deposit_refunds row, never references
+ * security_deposit_id, never touches security_deposit_transactions —
+ * structurally cannot cross into Pool B (P5.7E-LOCK §7).
+ */
+export async function createCreditRefundAction(
+  exitSettlementId: string,
+  tenantId: string,
+  _prevState: TenantExitActionState,
+  formData: FormData,
+): Promise<TenantExitActionState> {
+  const access = await requireOrganizationWriteAccess();
+  if (!access.ok) {
+    return { error: access.error };
+  }
+
+  const parsed = parseCreateCreditRefundFormData(formData);
+  if (!parsed.success) {
+    return { error: "Fix the highlighted fields.", fieldErrors: z.flattenError(parsed.error).fieldErrors };
+  }
+
+  const [settlement, existingRefunds] = await Promise.all([
+    getExitSettlementById(exitSettlementId, access.organizationId),
+    getTenantCreditRefunds(exitSettlementId, access.organizationId),
+  ]);
+
+  if (!settlement) {
+    return { error: "Exit settlement does not exist." };
+  }
+
+  const alreadyRecorded = existingRefunds
+    .filter((refund) => refund.status !== "CANCELLED" && refund.status !== "FAILED")
+    .reduce((sum, refund) => sum + refund.amount, 0);
+  const remaining = Math.round((settlement.credit_origin_refundable - alreadyRecorded) * 100) / 100;
+
+  if (remaining <= 0) {
+    return { error: "There is no credit-origin refundable amount remaining on this settlement." };
+  }
+
+  const result = await createCreditRefund({
+    organizationId: access.organizationId,
+    tenantExitId: settlement.tenant_exit_id,
+    exitSettlementId,
+    tenantId,
+    amount: remaining,
+    currencyCode: settlement.currency_code,
+    refundDate: parsed.data.refundDate,
+    paymentMethodId: parsed.data.paymentMethodId,
+    transactionReference: parsed.data.transactionReference,
+    notes: parsed.data.notes,
+  });
+  if (!result.data) {
+    return { error: result.error };
+  }
+
+  const completeResult = await completeCreditRefund(result.data.id, parsed.data.refundDate);
   if (completeResult.error) {
     return { error: completeResult.error };
   }

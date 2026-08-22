@@ -16,6 +16,8 @@ const ENTRY_TYPES: LedgerEntryType[] = [
   "REVERSAL",
   "ALLOCATION_REVERSAL",
   "EXIT_SETTLEMENT",
+  "DEPOSIT_APPLICATION",
+  "CREDIT_REFUND",
   "DEPOSIT_RECEIPT",
   "DEPOSIT_DEDUCTION",
   "DEPOSIT_REFUND",
@@ -29,6 +31,10 @@ const ENTRY_TYPE_LABELS: Record<LedgerEntryType, string> = {
   REVERSAL: "Reversal",
   ALLOCATION_REVERSAL: "Allocation Reversal",
   EXIT_SETTLEMENT: "Exit Settlement",
+  /** P5.7F — the ledger-side mirror of a settlement-linked deposit deduction (Pool B). */
+  DEPOSIT_APPLICATION: "Deposit Applied to Settlement",
+  /** P5.7F — Pool A (tenant-credit) refund payout. */
+  CREDIT_REFUND: "Credit Refund",
   DEPOSIT_RECEIPT: "Deposit Received",
   DEPOSIT_DEDUCTION: "Deposit Deduction",
   DEPOSIT_REFUND: "Deposit Refund",

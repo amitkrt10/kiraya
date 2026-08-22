@@ -123,25 +123,34 @@ test.describe("Tenant Exit & Settlement wizard", () => {
     await page.getByRole("link", { name: "Continue to Refund" }).click();
     await page.waitForURL(/\/refund/);
 
-    // 9. Refund amount uses final_amount_refundable — locked/disabled, not user-editable.
-    // 10. No standalone refund action exists anywhere else on this screen.
-    const amountField = page.locator('input[disabled]').first();
-    await expect(amountField).toBeVisible();
-    await expect(page.getByText(/Refund processing uses the finalized settlement amount/)).toBeVisible();
+    // 9. Two-pool refund UI (P5.7F/G/H): credit-origin and deposit-origin
+    // refunds are separate actions against separate authoritative caps —
+    // amount fields are always locked/disabled, never user-editable.
+    // 10. There is no generic "Record Refund" action anywhere on this screen.
+    await expect(page.getByRole("button", { name: "Record Refund" })).not.toBeVisible();
 
-    // 11. Refund processing works through the approved deposit_refunds -> COMPLETED workflow.
-    const hasRecordRefund = await page.getByRole("button", { name: "Record Refund" }).isVisible().catch(() => false);
-    if (hasRecordRefund) {
-      await page.getByLabel("Refund Date").fill("2026-03-15");
-      await page.getByRole("button", { name: "Record Refund" }).click();
-      await expect(page.getByRole("button", { name: "Record Refund" })).not.toBeVisible({ timeout: 15_000 });
+    // 11. Credit refund (Pool A) processing, if any credit-origin amount remains.
+    const hasCreditRefund = await page.getByRole("button", { name: "Refund Tenant Credit" }).isVisible().catch(() => false);
+    if (hasCreditRefund) {
+      await page.getByLabel("Refund Date").first().fill("2026-03-15");
+      await page.getByRole("button", { name: "Refund Tenant Credit" }).click();
+      await expect(page.getByRole("button", { name: "Refund Tenant Credit" })).not.toBeVisible({ timeout: 15_000 });
+    }
+
+    // Deposit refund (Pool B) processing, if any deposit-origin amount remains.
+    const hasDepositRefund = await page.getByRole("button", { name: "Refund Security Deposit" }).isVisible().catch(() => false);
+    if (hasDepositRefund) {
+      await page.getByLabel("Refund Date").last().fill("2026-03-15");
+      await page.getByRole("button", { name: "Refund Security Deposit" }).click();
+      await expect(page.getByRole("button", { name: "Refund Security Deposit" })).not.toBeVisible({ timeout: 15_000 });
     }
 
     await page.getByRole("link", { name: "Continue to Completion" }).click();
     await page.waitForURL(/\/completion/);
 
-    // No standalone Refund action anywhere in the wizard shell either.
+    // No standalone refund action anywhere in the wizard shell either.
     await expect(page.getByRole("button", { name: /^Refund Security Deposit$/ })).not.toBeVisible();
+    await expect(page.getByRole("button", { name: /^Refund Tenant Credit$/ })).not.toBeVisible();
 
     await page.getByRole("button", { name: "Complete Tenant Exit" }).click();
     await expect(page.getByRole("dialog", { name: /Complete Tenant Exit/ })).toBeVisible();
@@ -158,7 +167,7 @@ test.describe("Tenant Exit & Settlement wizard", () => {
     // 19. Existing REFUND transaction history remains correct — visible, read-only, on the Deposit tab.
     await page.goto(`/app/tenants/${exitTenantId}`);
     await page.getByRole("tab", { name: "Deposit" }).click();
-    if (hasRecordRefund) {
+    if (hasDepositRefund) {
       await expect(page.getByText("Refund", { exact: true }).first()).toBeVisible();
     }
     await expect(page.getByRole("button", { name: /^Refund/ })).not.toBeVisible();
