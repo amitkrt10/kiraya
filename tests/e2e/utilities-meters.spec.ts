@@ -120,7 +120,20 @@ test.describe("Utilities & Meters", () => {
     await utilityDialog.getByLabel("Metered (readings apply)").check();
     await utilityDialog.getByRole("button", { name: "Add Utility" }).click();
     await expect(utilityDialog).not.toBeVisible({ timeout: 15_000 });
-    await page.getByRole("link", { name: `E2E Utility ${stamp}` }).click();
+    // The Utilities list paginates and accumulates fixtures from prior E2E runs, so the
+    // newly-created utility isn't guaranteed to land on the first rendered page — use the
+    // page's own search filter (UtilityFilters -> ?q=, server-side ilike on name) to locate
+    // it by its unique timestamped name instead of assuming page-1 placement.
+    await page.getByLabel("Search", { exact: true }).fill(`E2E Utility ${stamp}`);
+    // The search box debounces (350ms) before pushing ?q= — if the target row already happens
+    // to be visible on the current unfiltered page, a plain toBeVisible/click races the still-
+    // pending debounced navigation, which then clobbers the click's own in-flight navigation.
+    // Waiting for the URL to actually carry the query guarantees the debounce has already
+    // fired, so no stale navigation is left pending to interrupt the click below.
+    await page.waitForURL((url) => url.searchParams.get("q") === `E2E Utility ${stamp}`);
+    const utilityLink = page.getByRole("link", { name: `E2E Utility ${stamp}` });
+    await expect(utilityLink).toBeVisible({ timeout: 15_000 });
+    await utilityLink.click();
     await page.waitForURL(/\/app\/utilities\/.+/);
 
     // 3b. Add a unit-level FIXED configuration.
@@ -153,7 +166,18 @@ test.describe("Utilities & Meters", () => {
     await expect(page.getByText("Meter added.")).toBeVisible({ timeout: 15_000 });
 
     // 4. Record a reading on that meter.
-    await page.getByRole("link", { name: `E2E-MTR-${stamp}` }).click();
+    // The Meters list paginates and accumulates fixtures from prior E2E runs, so the
+    // newly-created meter isn't guaranteed to land on the first rendered page — use the
+    // page's own search filter (MeterFilters -> ?q=, server-side ilike on meter_code) to
+    // locate it by its unique meter code instead of assuming page-1 placement.
+    await page.getByLabel("Search", { exact: true }).fill(`E2E-MTR-${stamp}`);
+    // See the identical comment at the utility search above: wait for the debounced ?q=
+    // navigation to actually land before checking visibility/clicking, so a stale pending
+    // debounce can't fire later and clobber the click's own navigation.
+    await page.waitForURL((url) => url.searchParams.get("q") === `E2E-MTR-${stamp}`);
+    const meterLink = page.getByRole("link", { name: `E2E-MTR-${stamp}` });
+    await expect(meterLink).toBeVisible({ timeout: 15_000 });
+    await meterLink.click();
     await page.waitForURL(/\/app\/meters\/.+/);
     await page.getByRole("button", { name: "Record Reading" }).click();
     const readingDialog = page.getByRole("dialog", { name: "Record Reading" });
@@ -250,7 +274,16 @@ test.describe("Utilities & Meters", () => {
     }
 
     // Establish a known previous reading (100) for meter A only.
-    await page.getByRole("link", { name: meterCodeWithHistory }).click();
+    // Same fixture-accumulation reason as test 3-5: use the Meters search filter to
+    // locate the newly-created meter rather than assuming it's on the rendered page.
+    await page.getByLabel("Search", { exact: true }).fill(meterCodeWithHistory);
+    // See the identical comment at test 3-5's search lookups: wait for the debounced ?q=
+    // navigation to actually land before checking visibility/clicking, so a stale pending
+    // debounce can't fire later and clobber the click's own navigation.
+    await page.waitForURL((url) => url.searchParams.get("q") === meterCodeWithHistory);
+    const meterWithHistoryLink = page.getByRole("link", { name: meterCodeWithHistory });
+    await expect(meterWithHistoryLink).toBeVisible({ timeout: 15_000 });
+    await meterWithHistoryLink.click();
     await page.waitForURL(/\/app\/meters\/.+/);
     await page.getByRole("button", { name: "Record Reading" }).click();
     const readingDialog = page.getByRole("dialog", { name: "Record Reading" });
