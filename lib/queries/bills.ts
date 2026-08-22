@@ -228,6 +228,68 @@ export async function getLeaseBills(leaseId: string, organizationId: string): Pr
   return data ?? [];
 }
 
+export interface BillDueBreakdown {
+  outstandingCount: number;
+  overdueCount: number;
+  overduePropertyCount: number;
+}
+
+const OPEN_BILL_STATUSES: BillStatus[] = ["FINALIZED", "PARTIALLY_PAID"];
+
+/**
+ * OUTSTANDING/OVERDUE (design system Section A) are due-date-derived UI
+ * distinctions, not stored bill_status values — only FINALIZED/PARTIALLY_PAID
+ * bills can still carry an unpaid balance, so both counts are a plain split
+ * of that subset by due_date, never a client-side balance sum.
+ */
+export async function getBillDueBreakdown(organizationId: string): Promise<BillDueBreakdown> {
+  const supabase = await createClient();
+  const today = new Date().toISOString().slice(0, 10);
+
+  const [outstandingResult, overdueResult, overdueUnitsResult] = await Promise.all([
+    supabase
+      .from("bills")
+      .select("id", { count: "exact", head: true })
+      .eq("organization_id", organizationId)
+      .in("status", OPEN_BILL_STATUSES)
+      .or(`due_date.is.null,due_date.gte.${today}`),
+    supabase
+      .from("bills")
+      .select("id", { count: "exact", head: true })
+      .eq("organization_id", organizationId)
+      .in("status", OPEN_BILL_STATUSES)
+      .lt("due_date", today),
+    supabase
+      .from("bills")
+      .select("units(property_id)")
+      .eq("organization_id", organizationId)
+      .in("status", OPEN_BILL_STATUSES)
+      .lt("due_date", today),
+  ]);
+
+  if (outstandingResult.error) {
+    throw new Error(`Failed to load outstanding bill count: ${outstandingResult.error.message}`);
+  }
+  if (overdueResult.error) {
+    throw new Error(`Failed to load overdue bill count: ${overdueResult.error.message}`);
+  }
+  if (overdueUnitsResult.error) {
+    throw new Error(`Failed to load overdue bill properties: ${overdueUnitsResult.error.message}`);
+  }
+
+  const propertyIds = new Set(
+    (overdueUnitsResult.data ?? [])
+      .map((row) => row.units?.property_id)
+      .filter((id): id is string => Boolean(id)),
+  );
+
+  return {
+    outstandingCount: outstandingResult.count ?? 0,
+    overdueCount: overdueResult.count ?? 0,
+    overduePropertyCount: propertyIds.size,
+  };
+}
+
 /** All bills for one tenant (across leases) — used by the Tenant Detail Bills tab. */
 export async function getTenantBills(tenantId: string, organizationId: string): Promise<BillListItem[]> {
   const supabase = await createClient();

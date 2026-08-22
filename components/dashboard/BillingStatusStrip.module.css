@@ -1,0 +1,28 @@
+.strip {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 2px solid var(--color-divider);
+  padding: 10px 14px;
+}
+
+.count {
+  font-size: 18px;
+  font-weight: 700;
+  font-family: var(--font-heading);
+  line-height: 1;
+}
+
+.label {
+  font-size: 11px;
+  color: var(--color-neutral-700);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: 4px;
+}

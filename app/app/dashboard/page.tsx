@@ -1,10 +1,63 @@
-import { PlaceholderPage } from "@/components/layout/PlaceholderPage";
+import { getRequestContext } from "@/lib/context/current";
+import { getOrganizationDashboard, getRecentPayments, getUpcomingLeaseExpiries } from "@/lib/queries/dashboard";
+import { getBillStatusCounts, getBillDueBreakdown } from "@/lib/queries/bills";
+import { DashboardKpiStrip } from "@/components/dashboard/DashboardKpiStrip";
+import { CollectionPerformanceChart } from "@/components/dashboard/CollectionPerformanceChart";
+import { RecentPaymentsTable } from "@/components/dashboard/RecentPaymentsTable";
+import { PendingActionsPanel } from "@/components/dashboard/PendingActionsPanel";
+import { LeaseExpiriesPanel } from "@/components/dashboard/LeaseExpiriesPanel";
+import { BillingStatusStrip } from "@/components/dashboard/BillingStatusStrip";
+import styles from "@/components/dashboard/DashboardLayout.module.css";
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const context = await getRequestContext();
+  if (!context?.organization) {
+    return null;
+  }
+
+  const organizationId = context.organization.organizationId;
+
+  const [dashboard, recentPayments, leaseExpiries, billStatusCounts, dueBreakdown] = await Promise.all([
+    getOrganizationDashboard(organizationId),
+    getRecentPayments(organizationId),
+    getUpcomingLeaseExpiries(organizationId),
+    getBillStatusCounts(organizationId),
+    getBillDueBreakdown(organizationId),
+  ]);
+
   return (
-    <PlaceholderPage
-      title="Dashboard"
-      description="The KPI strip, collection chart, and pending-actions panel from the approved design will be wired up here against kiraya.v_organization_dashboard in a later phase."
-    />
+    <div>
+      <DashboardKpiStrip latest={dashboard.latest} overdueCount={dueBreakdown.overdueCount} />
+
+      <div className={styles.twoColumn}>
+        <div className={styles.left}>
+          <div className={styles.sectionHeadingRow}>
+            <div className={styles.sectionHeading}>Collection Performance</div>
+            <div className={styles.subHeading}>Last 6 months</div>
+          </div>
+          <CollectionPerformanceChart monthly={dashboard.monthly} />
+
+          <div className={[styles.sectionHeading, styles.subsection].join(" ")}>Recent Payments</div>
+          <RecentPaymentsTable payments={recentPayments} />
+        </div>
+
+        <div className={styles.right}>
+          <div className={[styles.sectionHeading].join(" ")} style={{ marginBottom: 14 }}>
+            Pending Actions
+          </div>
+          <PendingActionsPanel overdueCount={dueBreakdown.overdueCount} overduePropertyCount={dueBreakdown.overduePropertyCount} />
+
+          <div className={[styles.sectionHeading, styles.subsection].join(" ")}>Lease Expiries</div>
+          <LeaseExpiriesPanel expiries={leaseExpiries} />
+        </div>
+      </div>
+
+      <div className={styles.panel}>
+        <div className={styles.sectionHeading} style={{ marginBottom: 16 }}>
+          Billing Status — This Cycle
+        </div>
+        <BillingStatusStrip counts={billStatusCounts} dueBreakdown={dueBreakdown} />
+      </div>
+    </div>
   );
 }
