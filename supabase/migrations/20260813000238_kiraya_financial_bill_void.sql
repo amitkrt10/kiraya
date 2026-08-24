@@ -3,6 +3,18 @@
 -- P1/P2 repair: safe bill voiding
 -- ============================================================
 
+-- P5.10-B: kiraya.void_bill(uuid,uuid,text) was originally created
+-- by 20260813000173_kiraya_void_bill.sql RETURNING uuid. The
+-- CREATE OR REPLACE FUNCTION below changes the return type to
+-- kiraya.bills, which PostgreSQL does not permit via CREATE OR
+-- REPLACE (SQLSTATE 42P13) -- this made the migration history
+-- unreplayable from an empty database (supabase db diff --linked,
+-- supabase db start). This DROP is added so a fresh replay can
+-- proceed; it changes nothing about the function's final signature,
+-- body, or behavior, which are exactly as this file already
+-- specifies below. Approved in P5.10/P5.10-B.
+drop function if exists kiraya.void_bill(uuid, uuid, text);
+
 create or replace function kiraya.void_bill(
     p_bill_id uuid,
     p_voided_by uuid,
