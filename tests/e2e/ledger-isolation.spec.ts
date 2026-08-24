@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { findOrgATenantIdWithLedgerEntries } from "./helpers/fixtures";
 
 /**
  * P5.3A Ledger — cross-organization RLS proof, mirroring
@@ -11,9 +12,10 @@ import { test, expect } from "@playwright/test";
  * E2E_ORG_A_PROPERTY_ID                 — a property id belonging to org A
  * E2E_ORG_B_EMAIL, E2E_ORG_B_PASSWORD   — a user in a *different* organization B
  *
- * Tenant-scoped tests additionally need:
- * E2E_ORG_A_TENANT_ID                   — a tenant id belonging to org A with
- *                                          real ledger entries
+ * The tenant-scoped test uses E2E_ORG_A_TENANT_ID (a tenant with real ledger
+ * entries) if set, otherwise (P5.14) dynamically discovers a tenant with at
+ * least one real ledger entry via helpers/fixtures.ts, using the same
+ * authenticated org-A session. If none exists, it skips itself at runtime.
  *
  * The test intentionally does not seed data itself — it must observe RLS
  * against real rows, not a mocked stand-in.
@@ -22,12 +24,10 @@ import { test, expect } from "@playwright/test";
 const orgAEmail = process.env.E2E_ORG_A_EMAIL;
 const orgAPassword = process.env.E2E_ORG_A_PASSWORD;
 const orgAPropertyId = process.env.E2E_ORG_A_PROPERTY_ID;
-const orgATenantId = process.env.E2E_ORG_A_TENANT_ID;
 const orgBEmail = process.env.E2E_ORG_B_EMAIL;
 const orgBPassword = process.env.E2E_ORG_B_PASSWORD;
 
 const hasOrgCredentials = Boolean(orgAEmail && orgAPassword && orgBEmail && orgBPassword);
-const hasTenantId = Boolean(hasOrgCredentials && orgATenantId);
 
 async function login(page: import("@playwright/test").Page, email: string, password: string) {
   await page.goto("/login");
@@ -69,12 +69,15 @@ test.describe("org-wide ledger access", () => {
 
 test.describe("tenant ledger isolation", () => {
   test.skip(
-    !hasTenantId,
-    "Needs E2E_ORG_A_TENANT_ID (a tenant with real ledger entries) in addition to the org credentials — not available in this environment.",
+    !hasOrgCredentials,
+    "Needs E2E_ORG_A_EMAIL/PASSWORD and E2E_ORG_B_EMAIL/PASSWORD for two real, different-organization users — not available in this environment.",
   );
 
   test("org A's tenant Ledger tab shows real entries; org B gets a clean not-found for the same tenant id", async ({ page }) => {
     await login(page, orgAEmail!, orgAPassword!);
+    const orgATenantId = process.env.E2E_ORG_A_TENANT_ID ?? (await findOrgATenantIdWithLedgerEntries(page));
+    test.skip(!orgATenantId, "No tenant with real ledger entries currently exists for org A to use as a dynamic fixture.");
+
     await page.goto(`/app/tenants/${orgATenantId}`);
     await page.getByRole("tab", { name: "Ledger" }).click();
     await expect(page.getByRole("columnheader", { name: "Running Balance" })).toBeVisible({ timeout: 10_000 });

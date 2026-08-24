@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { findOrgATenantIdWithExit } from "./helpers/fixtures";
 
 /**
  * P5.4F Tenant Exits list — org-wide `/app/exits` read/navigation surface,
@@ -8,12 +9,15 @@ import { test, expect } from "@playwright/test";
  *
  * NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY  (.env.local)
  * E2E_ORG_A_EMAIL, E2E_ORG_A_PASSWORD          — a user in organization A
- * E2E_ORG_A_EXIT_TENANT_ID                     — a tenant in org A with at
- *                                                 least one tenant_exits row
- *                                                 (the same fixture used by
- *                                                 tenant-exit-wizard.spec.ts)
  * E2E_ORG_B_EMAIL, E2E_ORG_B_PASSWORD          — a user in a *different*
  *                                                 organization B
+ *
+ * The two exit-list tests use E2E_ORG_A_EXIT_TENANT_ID (a tenant in org A
+ * with at least one tenant_exits row — the same fixture used by
+ * tenant-exit-wizard.spec.ts) if set, otherwise (P5.14) dynamically
+ * discover a tenant with an existing tenant_exits row via
+ * helpers/fixtures.ts, using the same authenticated org-A session. If none
+ * exists, they skip themselves at runtime.
  *
  * This test intentionally does not seed data itself — it observes the real
  * UI against real rows, not a mocked stand-in.
@@ -21,12 +25,10 @@ import { test, expect } from "@playwright/test";
 
 const orgAEmail = process.env.E2E_ORG_A_EMAIL;
 const orgAPassword = process.env.E2E_ORG_A_PASSWORD;
-const exitTenantId = process.env.E2E_ORG_A_EXIT_TENANT_ID;
 const orgBEmail = process.env.E2E_ORG_B_EMAIL;
 const orgBPassword = process.env.E2E_ORG_B_PASSWORD;
 
 const hasCredentials = Boolean(orgAEmail && orgAPassword && orgBEmail && orgBPassword);
-const hasExitTenant = Boolean(exitTenantId);
 
 async function login(page: import("@playwright/test").Page, email: string, password: string) {
   await page.goto("/login");
@@ -63,9 +65,9 @@ test.describe("Tenant Exits list", () => {
   });
 
   test("org A sees its own exit, and the row links into the existing wizard", async ({ page }) => {
-    test.skip(!hasExitTenant, "Needs E2E_ORG_A_EXIT_TENANT_ID — a tenant in org A with a tenant_exits row.");
-
     await login(page, orgAEmail!, orgAPassword!);
+    const exitTenantId = process.env.E2E_ORG_A_EXIT_TENANT_ID ?? (await findOrgATenantIdWithExit(page));
+    test.skip(!exitTenantId, "No tenant with a tenant_exits row currently exists for org A to use as a dynamic fixture.");
 
     // Discover the exit's own reference from the tenant's Exit tab, then confirm the org-wide list surfaces the same exit.
     await page.goto(`/app/tenants/${exitTenantId}`);
@@ -76,7 +78,7 @@ test.describe("Tenant Exits list", () => {
       .catch(() => false);
     test.skip(!hasExit, "This tenant has no tenant_exits row yet — run the wizard fixture first.");
 
-    const exitReference = await page.locator("text=/^EXT-/").first().textContent();
+    const exitReference = await page.locator("text=/^EXIT-/").first().textContent();
     expect(exitReference).toBeTruthy();
 
     await page.goto("/app/exits");
@@ -85,15 +87,19 @@ test.describe("Tenant Exits list", () => {
     // Clicking the row's reference link lands inside the existing wizard shell, unaffected by this checkpoint.
     await page.getByRole("link", { name: exitReference!.trim() }).click();
     await page.waitForURL(/\/app\/exits\/.+\/(review|dues|deposit|adjustments|settlement|statement|refund|completion)/);
-    await expect(page.getByText(exitReference!.trim())).toBeVisible();
+    // .first(): the reference legitimately renders twice on this page (the
+    // step-rail heading and the breadcrumb trail), same ambiguity already
+    // handled the same way for the /^EXIT-/ locator above.
+    await expect(page.getByText(exitReference!.trim()).first()).toBeVisible();
 
     await signOut(page);
   });
 
   test("org B cannot see org A's exit in the list", async ({ page }) => {
-    test.skip(!hasExitTenant, "Needs E2E_ORG_A_EXIT_TENANT_ID — a tenant in org A with a tenant_exits row.");
-
     await login(page, orgAEmail!, orgAPassword!);
+    const exitTenantId = process.env.E2E_ORG_A_EXIT_TENANT_ID ?? (await findOrgATenantIdWithExit(page));
+    test.skip(!exitTenantId, "No tenant with a tenant_exits row currently exists for org A to use as a dynamic fixture.");
+
     await page.goto(`/app/tenants/${exitTenantId}`);
     await page.getByRole("tab", { name: "Exit" }).click();
     const hasExit = await page
@@ -102,7 +108,7 @@ test.describe("Tenant Exits list", () => {
       .catch(() => false);
     test.skip(!hasExit, "This tenant has no tenant_exits row yet — run the wizard fixture first.");
 
-    const exitReference = (await page.locator("text=/^EXT-/").first().textContent())!.trim();
+    const exitReference = (await page.locator("text=/^EXIT-/").first().textContent())!.trim();
     const exitHref = await page.getByRole("link", { name: /View Exit|Continue Exit/ }).getAttribute("href");
     await signOut(page);
 

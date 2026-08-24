@@ -1,0 +1,54 @@
+# P5.16 — minimum project-specific Supabase configuration for a disposable,
+# local-only E2E environment. This file only affects `supabase start`/
+# `db start`/`db reset` running against LOCAL Docker containers -- it has no
+# effect on the linked hosted project, and nothing here can cause the CLI to
+# contact it. CLI defaults are used wherever this project does not need
+# anything different from them.
+
+project_id = "kiraya"
+
+[api]
+enabled = true
+port = 54321
+# The app's Supabase client targets the "kiraya" schema explicitly
+# (lib/supabase/client.ts, lib/supabase/server.ts: db.schema = "kiraya").
+# Without listing it here, local PostgREST only exposes "public" and
+# "graphql_public" (the CLI's own default), and every query the app makes
+# against a fresh local stack would fail -- this is the one setting this
+# whole environment cannot work without.
+schemas = ["public", "kiraya", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 15
+
+[db.seed]
+enabled = true
+sql_paths = ["./seed.sql"]
+
+[studio]
+enabled = true
+port = 54323
+
+[auth]
+enabled = true
+site_url = "http://127.0.0.1:3000"
+additional_redirect_urls = []
+jwt_expiry = 3600
+enable_signup = false
+enable_anonymous_sign_ins = false
+
+[auth.email]
+# NOTE: this flag actually gates the whole email/password provider
+# (login included), not just self-registration -- confirmed directly:
+# leaving it false produced "Email logins are disabled" for the seeded
+# accounts even though they exist and were never meant to self-register.
+# The top-level [auth].enable_signup = false above is what actually blocks
+# open self-service signup through the app's own UI.
+enable_signup = true
+# Local-only test accounts are inserted directly by seed.sql with
+# email_confirmed_at already set (P5.15's confirmed-feasible approach) --
+# no confirmation email needs to be sent or clicked for them to work.
+enable_confirmations = false
