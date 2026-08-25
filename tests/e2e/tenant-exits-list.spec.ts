@@ -11,6 +11,10 @@ import { findOrgATenantIdWithExit } from "./helpers/fixtures";
  * E2E_ORG_A_EMAIL, E2E_ORG_A_PASSWORD          — a user in organization A
  * E2E_ORG_B_EMAIL, E2E_ORG_B_PASSWORD          — a user in a *different*
  *                                                 organization B
+ * E2E_ORG_A_READONLY_EMAIL, E2E_ORG_A_READONLY_PASSWORD — optional: a
+ *                                                 viewer-only user in org A,
+ *                                                 for the "New Exit" hidden-
+ *                                                 for-viewers test
  *
  * The two exit-list tests use E2E_ORG_A_EXIT_TENANT_ID (a tenant in org A
  * with at least one tenant_exits row — the same fixture used by
@@ -21,14 +25,23 @@ import { findOrgATenantIdWithExit } from "./helpers/fixtures";
  *
  * This test intentionally does not seed data itself — it observes the real
  * UI against real rows, not a mocked stand-in.
+ *
+ * P5.24 adds the "New Exit" entry-point test, which deliberately relies on
+ * whatever ACTIVE, not-already-exiting leases already exist in org A's seed
+ * data (rather than a dedicated fixture id) so it doesn't compete with
+ * tenant-exit-wizard.spec.ts's own dedicated exit fixture for the same lease
+ * under fullyParallel:true.
  */
 
 const orgAEmail = process.env.E2E_ORG_A_EMAIL;
 const orgAPassword = process.env.E2E_ORG_A_PASSWORD;
 const orgBEmail = process.env.E2E_ORG_B_EMAIL;
 const orgBPassword = process.env.E2E_ORG_B_PASSWORD;
+const readOnlyEmail = process.env.E2E_ORG_A_READONLY_EMAIL;
+const readOnlyPassword = process.env.E2E_ORG_A_READONLY_PASSWORD;
 
 const hasCredentials = Boolean(orgAEmail && orgAPassword && orgBEmail && orgBPassword);
+const hasReadOnlyCredentials = Boolean(readOnlyEmail && readOnlyPassword);
 
 async function login(page: import("@playwright/test").Page, email: string, password: string) {
   await page.goto("/login");
@@ -121,6 +134,54 @@ test.describe("Tenant Exits list", () => {
     // Org A's exit reference never appears anywhere in org B's full, unfiltered list.
     await page.goto("/app/exits");
     await expect(page.getByRole("link", { name: exitReference })).not.toBeVisible();
+    await signOut(page);
+  });
+
+  test("read-only user does not see the New Exit action", async ({ page }) => {
+    test.skip(!hasReadOnlyCredentials, "Needs E2E_ORG_A_READONLY_EMAIL/PASSWORD — a viewer-only user in org A.");
+    await login(page, readOnlyEmail!, readOnlyPassword!);
+    await page.goto("/app/exits");
+    await expect(page.getByRole("button", { name: "New Exit" })).not.toBeVisible();
+    await signOut(page);
+  });
+
+  test("New Exit opens a tenant/lease picker that leads into the existing wizard entry point", async ({ page }) => {
+    await login(page, orgAEmail!, orgAPassword!);
+    await page.goto("/app/exits");
+    // Wait for the page's own content before checking the (permission-gated,
+    // hence possibly absent) New Exit button — an immediate isVisible() read
+    // right after goto() can race the initial render and false-skip.
+    await expect(page.getByLabel("Status")).toBeVisible();
+
+    const newExitButton = page.getByRole("button", { name: "New Exit" });
+    test.skip(!(await newExitButton.isVisible().catch(() => false)), "Signed-in org A user has no write access here.");
+    await newExitButton.click();
+
+    const picker = page.getByRole("dialog", { name: "Start a Tenant Exit" });
+    await expect(picker).toBeVisible();
+
+    const noEligible = await picker.getByText("No eligible tenants").isVisible().catch(() => false);
+    test.skip(noEligible, "Org A currently has no ACTIVE lease without an exit already in progress.");
+
+    // An unmatchable search proves the picker filters, without depending on
+    // any specific tenant/lease fixture (several other specs create and
+    // consume exits against org A's shared seed leases).
+    await picker.getByLabel("Search tenant, property, unit, or lease").fill("zzz-no-such-tenant-zzz");
+    await expect(picker.getByText("No matches")).toBeVisible();
+    await picker.getByLabel("Search tenant, property, unit, or lease").fill("");
+
+    const firstRow = picker.locator("table tbody tr").first();
+    await expect(firstRow).toBeVisible();
+    await firstRow.click();
+
+    // Lands on the existing, unmodified /app/exits/new?leaseId=... entry
+    // point — the same one TenantExitTab's "Start Tenant Exit" link already
+    // uses. Deliberately does not fill in or submit the form: this test
+    // only proves the missing entry point now exists, not another pass
+    // through the already-covered full wizard walkthrough.
+    await page.waitForURL(/\/app\/exits\/new\?leaseId=.+/);
+    await expect(page.getByLabel("Planned Exit Date")).toBeVisible();
+
     await signOut(page);
   });
 });

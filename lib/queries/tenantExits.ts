@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database";
 import { getTenantBills, type BillListItem } from "./bills";
 import { getBillBalance } from "./financial";
+import type { LeaseListItem } from "./leases";
 
 export type TenantExitRow = Database["kiraya"]["Tables"]["tenant_exits"]["Row"];
 export type ExitSettlementRow = Database["kiraya"]["Tables"]["exit_settlements"]["Row"];
@@ -29,6 +30,9 @@ export interface GetTenantExitsParams {
   organizationId: string;
   search?: string;
   status?: TenantExitStatus;
+  propertyId?: string;
+  unitId?: string;
+  tenantId?: string;
   page?: number;
   pageSize?: number;
 }
@@ -43,14 +47,23 @@ export interface GetTenantExitsResult {
 const TENANT_EXIT_LIST_SELECT =
   "*, tenants(display_name, tenant_code), leases(lease_code, units(unit_code, properties(id, name, property_code)))";
 
+// Same conditional-inner-join pattern as getBills()/getLeases(): PostgREST
+// only allows filtering on an embedded resource's own columns (here,
+// leases.unit_id and leases.units.property_id) when that resource is
+// joined with `!inner` rather than a plain left join.
+const TENANT_EXIT_LIST_SELECT_WITH_UNIT_FILTER =
+  "*, tenants(display_name, tenant_code), leases!inner(lease_code, units!inner(unit_code, properties(id, name, property_code)))";
+
 /**
  * Org-wide Tenant Exits list — read/navigation only, no settlement figures.
  * RLS (tenant_exits_select: can_access_tenant) is the actual security
  * boundary; the organization_id filter here is defense in depth, same as
- * every other list query in this codebase.
+ * every other list query in this codebase. propertyId/unitId/tenantId
+ * compose with search/status entirely at the query layer (no in-memory
+ * filtering), matching getBills()'s established property-filter pattern.
  */
 export async function getTenantExits(params: GetTenantExitsParams): Promise<GetTenantExitsResult> {
-  const { organizationId, search, status } = params;
+  const { organizationId, search, status, propertyId, unitId, tenantId } = params;
   const page = Math.max(1, params.page ?? 1);
   const pageSize = params.pageSize ?? DEFAULT_PAGE_SIZE;
   const from = (page - 1) * pageSize;
@@ -59,7 +72,9 @@ export async function getTenantExits(params: GetTenantExitsParams): Promise<GetT
   const supabase = await createClient();
   let query = supabase
     .from("tenant_exits")
-    .select(TENANT_EXIT_LIST_SELECT, { count: "exact" })
+    .select(propertyId || unitId ? TENANT_EXIT_LIST_SELECT_WITH_UNIT_FILTER : TENANT_EXIT_LIST_SELECT, {
+      count: "exact",
+    })
     .eq("organization_id", organizationId);
 
   if (search && search.trim().length > 0) {
@@ -68,6 +83,15 @@ export async function getTenantExits(params: GetTenantExitsParams): Promise<GetT
   if (status) {
     query = query.eq("status", status);
   }
+  if (propertyId) {
+    query = query.eq("leases.units.property_id", propertyId);
+  }
+  if (unitId) {
+    query = query.eq("leases.unit_id", unitId);
+  }
+  if (tenantId) {
+    query = query.eq("tenant_id", tenantId);
+  }
 
   const { data, error, count } = await query.order("created_at", { ascending: false }).range(from, to);
 
@@ -75,7 +99,47 @@ export async function getTenantExits(params: GetTenantExitsParams): Promise<GetT
     throw new Error(`Failed to load tenant exits: ${error.message}`);
   }
 
-  return { exits: data ?? [], totalCount: count ?? 0, page, pageSize };
+  return { exits: (data ?? []) as unknown as TenantExitListItem[], totalCount: count ?? 0, page, pageSize };
+}
+
+/**
+ * Active leases eligible to start a new tenant exit from — backs the
+ * `/app/exits` "New Exit" picker. Eligibility mirrors exactly what
+ * app/app/exits/new/page.tsx and TenantExitTab already enforce for the
+ * established per-tenant entry point (ACTIVE lease, no INITIATED/
+ * PENDING_SETTLEMENT exit already in progress — tenant_exits_active_lease_
+ * unique_idx is the real, database-level guarantee; this is purely a UX
+ * filter on top of it, never the authorization boundary). Both queries are
+ * RLS-scoped through the same request-bound client as every other query in
+ * this codebase — no service_role, no client-side filtering of an
+ * org-wide dataset.
+ */
+export async function getEligibleLeasesForExit(organizationId: string): Promise<LeaseListItem[]> {
+  const supabase = await createClient();
+
+  const [activeLeasesResult, blockingExitsResult] = await Promise.all([
+    supabase
+      .from("leases")
+      .select("*, tenants(display_name, tenant_code), units(unit_code, properties(id, name, property_code))")
+      .eq("organization_id", organizationId)
+      .eq("status", "ACTIVE")
+      .order("lease_code", { ascending: true }),
+    supabase
+      .from("tenant_exits")
+      .select("lease_id")
+      .eq("organization_id", organizationId)
+      .in("status", ["INITIATED", "PENDING_SETTLEMENT"]),
+  ]);
+
+  if (activeLeasesResult.error) {
+    throw new Error(`Failed to load eligible leases: ${activeLeasesResult.error.message}`);
+  }
+  if (blockingExitsResult.error) {
+    throw new Error(`Failed to load eligible leases: ${blockingExitsResult.error.message}`);
+  }
+
+  const blockedLeaseIds = new Set((blockingExitsResult.data ?? []).map((row) => row.lease_id));
+  return ((activeLeasesResult.data ?? []) as unknown as LeaseListItem[]).filter((lease) => !blockedLeaseIds.has(lease.id));
 }
 
 /**
