@@ -634,7 +634,7 @@ export type Database = {
           payment_method_id?: string | null
           processed_by?: string | null
           refund_date?: string | null
-          refund_reference: string
+          refund_reference?: string
           security_deposit_id: string
           status?: string
           tenant_exit_id: string
@@ -1224,7 +1224,7 @@ export type Database = {
           organization_id: string
           previous_dues?: number
           settlement_date: string
-          settlement_reference: string
+          settlement_reference?: string
           status?: Database["kiraya"]["Enums"]["settlement_status"]
           tenant_credit?: number
           tenant_exit_id: string
@@ -3835,7 +3835,7 @@ export type Database = {
           payment_method_id?: string | null
           processed_by?: string | null
           refund_date?: string | null
-          refund_reference: string
+          refund_reference?: string
           status?: string
           tenant_exit_id: string
           tenant_id: string
@@ -3978,7 +3978,7 @@ export type Database = {
         Insert: {
           actual_exit_date?: string | null
           created_at?: string
-          exit_reference: string
+          exit_reference?: string
           final_meter_reading_date?: string | null
           handover_date?: string | null
           id?: string

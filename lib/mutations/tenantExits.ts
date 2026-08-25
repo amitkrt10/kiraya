@@ -9,16 +9,6 @@ import type {
 } from "@/lib/queries/tenantExits";
 import { translateDatabaseError, type MutationResult } from "./errors";
 
-function generateReference(prefix: string): string {
-  const now = new Date();
-  const stamp = now
-    .toISOString()
-    .replace(/[-:]/g, "")
-    .replace("T", "-")
-    .slice(0, 15);
-  return `${prefix}-${stamp}`;
-}
-
 interface InitiateTenantExitArgs {
   organizationId: string;
   leaseId: string;
@@ -42,6 +32,13 @@ interface InitiateTenantExitArgs {
  * INITIATED record with no settlement yet — the same non-rollback
  * reasoning already established for lease creation (P5.2C) and deposit
  * receipt creation (P5.4C).
+ *
+ * exit_reference/settlement_reference are never supplied here — P5.18
+ * moved their generation into a database column DEFAULT
+ * (kiraya.generate_sequential_reference(), sequence-backed) precisely
+ * so concurrent exits for the same organization can never collide;
+ * the previous app-side generateReference() had only second
+ * granularity and was not safe under real concurrency.
  */
 export async function initiateTenantExit(
   args: InitiateTenantExitArgs,
@@ -54,7 +51,6 @@ export async function initiateTenantExit(
       organization_id: args.organizationId,
       lease_id: args.leaseId,
       tenant_id: args.tenantId,
-      exit_reference: generateReference("EXIT"),
       status: "INITIATED",
       notice_date: args.noticeDate ?? null,
       planned_exit_date: args.plannedExitDate ?? null,
@@ -76,7 +72,6 @@ export async function initiateTenantExit(
       tenant_exit_id: exit.id,
       lease_id: args.leaseId,
       tenant_id: args.tenantId,
-      settlement_reference: generateReference("SET"),
       settlement_date: new Date().toISOString().slice(0, 10),
     })
     .select("*")
@@ -181,7 +176,6 @@ export async function createDepositRefund(args: CreateDepositRefundArgs): Promis
       tenant_exit_id: args.tenantExitId,
       exit_settlement_id: args.exitSettlementId,
       tenant_id: args.tenantId,
-      refund_reference: generateReference("REF"),
       amount: args.amount,
       refund_date: args.refundDate ?? null,
       payment_method_id: args.paymentMethodId ?? null,
@@ -251,7 +245,6 @@ export async function createCreditRefund(args: CreateCreditRefundArgs): Promise<
       tenant_exit_id: args.tenantExitId,
       exit_settlement_id: args.exitSettlementId,
       tenant_id: args.tenantId,
-      refund_reference: generateReference("CRF"),
       amount: args.amount,
       currency_code: args.currencyCode,
       refund_date: args.refundDate ?? null,
