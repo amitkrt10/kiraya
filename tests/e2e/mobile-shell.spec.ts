@@ -55,11 +55,18 @@ test.describe("Mobile shell — 375x812", () => {
     await expect(page.getByText("Collection Performance")).toBeVisible();
     await expectNoHorizontalOverflow(page);
 
-    // 3. Mobile menu opens.
+    // 3. Mobile menu opens. P5.26 removed the standalone "Units" and
+    // "Owners" nav items (their routes are placeholders, not full features)
+    // — confirm they're gone from the drawer, and that the remaining
+    // primary items are still present.
     const menuButton = page.getByRole("button", { name: "Open menu" });
     await expect(menuButton).toBeVisible();
     await menuButton.click();
     await expect(page.getByRole("link", { name: "Properties" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Tenants" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Tenant Exits" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Units", exact: true })).not.toBeVisible();
+    await expect(page.getByRole("link", { name: "Owners", exact: true })).not.toBeVisible();
     await expectNoHorizontalOverflow(page);
 
     // 4. Navigate to Tenants — also proves the menu closes after navigation.
@@ -137,6 +144,12 @@ test.describe("Desktop smoke — regression guard", () => {
     // desktop width — the original persistent sidebar takes its place.
     await expect(page.getByRole("button", { name: "Open menu" })).not.toBeVisible();
     await expect(page.getByRole("link", { name: "Dashboard", exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Properties" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Tenants" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Tenant Exits" })).toBeVisible();
+    // P5.26 — "Units" and "Owners" removed from the primary sidebar too.
+    await expect(page.getByRole("link", { name: "Units", exact: true })).not.toBeVisible();
+    await expect(page.getByRole("link", { name: "Owners", exact: true })).not.toBeVisible();
     await expect(page.getByPlaceholder("Search tenants, bills, units…")).toBeVisible();
     await expectNoHorizontalOverflow(page);
   });

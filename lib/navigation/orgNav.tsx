@@ -1,8 +1,6 @@
 import {
   LayoutDashboard,
   Building2,
-  DoorOpen,
-  UserRound,
   Users,
   Signature,
   Receipt,
@@ -37,8 +35,6 @@ export const orgNavGroups: NavGroupDef[] = [
     label: "Portfolio",
     items: [
       { href: "/app/properties", label: "Properties", icon: <Building2 size={ICON_SIZE} aria-hidden="true" /> },
-      { href: "/app/units", label: "Units", icon: <DoorOpen size={ICON_SIZE} aria-hidden="true" /> },
-      { href: "/app/owners", label: "Owners", icon: <UserRound size={ICON_SIZE} aria-hidden="true" /> },
     ],
   },
   {
