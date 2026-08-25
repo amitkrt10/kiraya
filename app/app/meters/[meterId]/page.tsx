@@ -10,6 +10,7 @@ import { GeneratedBillItemsTable } from "@/components/meters/GeneratedBillItemsT
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Clock } from "lucide-react";
 import { isUuid } from "@/lib/utils/uuid";
+import gridStyles from "@/components/ui/ResponsiveGrid.module.css";
 
 export default async function MeterDetailPage({ params }: { params: Promise<{ meterId: string }> }) {
   const { meterId } = await params;
@@ -57,7 +58,7 @@ export default async function MeterDetailPage({ params }: { params: Promise<{ me
         {canWrite ? <RecordReadingDialog meterId={meterId} meterCode={meter.meter_code} latestReading={latestReading} /> : null}
       </div>
 
-      <div className="card" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", marginBottom: 28 }}>
+      <div className={["card", gridStyles.cols4].join(" ")} style={{ display: "grid", marginBottom: 28 }}>
         {[
           { label: "Multiplier", value: `${meter.multiplier}×` },
           { label: "Initial Reading", value: meter.initial_reading ?? "—" },

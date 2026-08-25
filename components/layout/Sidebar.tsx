@@ -10,6 +10,7 @@ export interface AppSidebarProps {
   currentOrganizationId: string;
   userName: string;
   roleLabel: string;
+  mobileOpen?: boolean;
 }
 
 export function AppSidebar({
@@ -18,9 +19,10 @@ export function AppSidebar({
   currentOrganizationId,
   userName,
   roleLabel,
+  mobileOpen,
 }: AppSidebarProps) {
   return (
-    <aside className={[styles.sidebar, styles.light].join(" ")}>
+    <aside className={[styles.sidebar, styles.light, mobileOpen ? styles.sidebarOpen : ""].join(" ")}>
       <div className={styles.logoRow}>
         <div className={styles.logoMark}>
           <span className={styles.logoMarkText}>K</span>
@@ -52,11 +54,12 @@ export function AppSidebar({
 export interface AdminSidebarProps {
   navGroups: NavGroupDef[];
   userName: string;
+  mobileOpen?: boolean;
 }
 
-export function AdminSidebar({ navGroups, userName }: AdminSidebarProps) {
+export function AdminSidebar({ navGroups, userName, mobileOpen }: AdminSidebarProps) {
   return (
-    <aside className={[styles.sidebar, styles.dark].join(" ")}>
+    <aside className={[styles.sidebar, styles.dark, mobileOpen ? styles.sidebarOpen : ""].join(" ")}>
       <div className={styles.logoRow}>
         <div className={styles.logoMark}>
           <span className={styles.logoMarkText}>K</span>

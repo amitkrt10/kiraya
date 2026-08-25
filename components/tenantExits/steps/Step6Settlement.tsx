@@ -8,6 +8,7 @@ import { Alert } from "@/components/ui/Alert";
 import { useToast } from "@/components/ui/Toast";
 import { finalizeExitSettlementAction } from "@/lib/actions/tenantExits";
 import type { ExitSettlementRow } from "@/lib/queries/tenantExits";
+import gridStyles from "@/components/ui/ResponsiveGrid.module.css";
 
 function formatCurrency(amount: number, currencyCode: string): string {
   return new Intl.NumberFormat("en-IN", { style: "currency", currency: currencyCode, maximumFractionDigits: 2 }).format(amount);
@@ -104,7 +105,7 @@ export function Step6Settlement({
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 24 }}>
+      <div className={gridStyles.cols2} style={{ display: "grid", gap: 12, marginBottom: 24 }}>
         <div className="card" style={{ padding: "14px 18px" }}>
           <div style={{ fontSize: 11, color: "var(--color-neutral-700)", marginBottom: 4 }}>Credit-Origin Refundable</div>
           <div className="num" style={{ fontWeight: 700, fontSize: 17 }}>{formatCurrency(settlement.credit_origin_refundable, settlement.currency_code)}</div>

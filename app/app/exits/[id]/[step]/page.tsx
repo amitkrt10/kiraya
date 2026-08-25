@@ -18,6 +18,7 @@ import { getTenantOutstanding } from "@/lib/queries/financial";
 import { calculateExitSettlement } from "@/lib/mutations/tenantExits";
 import { EXIT_STEPS, resolveReachableStep, canEditAdjustments, canFinalizeSettlement, canCompleteExit, type ExitStepSlug } from "@/lib/tenantExitSteps";
 import { ExitStepRail } from "@/components/tenantExits/ExitStepRail";
+import wizardStyles from "@/components/tenantExits/ExitWizardLayout.module.css";
 import { Step2Review } from "@/components/tenantExits/steps/Step2Review";
 import { Step3Dues } from "@/components/tenantExits/steps/Step3Dues";
 import { Step4Deposit } from "@/components/tenantExits/steps/Step4Deposit";
@@ -224,9 +225,9 @@ export default async function TenantExitStepPage({ params }: { params: Promise<{
   const content = await renderStep(stepMeta.slug);
 
   return (
-    <div style={{ display: "flex", minHeight: "calc(100vh - var(--topbar-height))", background: "var(--color-bg)" }}>
+    <div className={wizardStyles.shell} style={{ minHeight: "calc(100vh - var(--topbar-height))", background: "var(--color-bg)" }}>
       <ExitStepRail {...railProps} />
-      <div style={{ flex: "1 1 auto", padding: "32px 40px", maxWidth: 760 }}>
+      <div className={wizardStyles.content}>
         <div style={{ fontSize: 12, color: "var(--color-neutral-700)", marginBottom: 6 }}>
           {context.organization.organizationName} / Tenant Exits / {exit.exit_reference}
         </div>

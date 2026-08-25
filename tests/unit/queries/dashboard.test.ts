@@ -12,7 +12,7 @@ vi.mock("@/lib/queries/payments", () => ({
   getPayments: vi.fn(async () => ({ payments: [{ id: "pay-1" }], totalCount: 1, page: 1, pageSize: 5 })),
 }));
 
-const { getOrganizationDashboard, getRecentPayments, getUpcomingLeaseExpiries } = await import("@/lib/queries/dashboard");
+const { getOrganizationDashboard, getRecentPayments, getUpcomingLeaseExpiries, getCurrentDues } = await import("@/lib/queries/dashboard");
 const { getPayments } = await import("@/lib/queries/payments");
 
 describe("getOrganizationDashboard — organization scoping and empty-org handling", () => {
@@ -105,5 +105,58 @@ describe("getUpcomingLeaseExpiries — reuses kiraya.v_lease_expiry_alerts, no d
     expect(result).toEqual([
       { leaseId: "lease-1", tenantName: "Farida Khan", unitLabel: "Green Court · 2C", daysUntilExpiry: 12, alertStatus: "EXPIRING_30_DAYS" },
     ]);
+  });
+});
+
+describe("getCurrentDues — reuses kiraya.v_tenant_outstanding (get_tenant_due() under the hood), no due amount recomputed", () => {
+  beforeEach(() => {
+    mockCreateClient.mockReset();
+  });
+
+  it("scopes to the organization, filters to amount_due > 0, and orders by amount_due descending", async () => {
+    const { chain, calls } = createChainMock({ data: [], error: null });
+    mockCreateClient.mockReturnValue({ from: vi.fn(() => chain) });
+
+    await getCurrentDues("org-a");
+
+    expect(callsFor(calls, "eq")).toContainEqual(["organization_id", "org-a"]);
+    expect(callsFor(calls, "gt")).toContainEqual(["amount_due", 0]);
+    expect(callsFor(calls, "order")).toContainEqual(["amount_due", { ascending: false }]);
+  });
+
+  it("maps rows to tenant/unit/amount, falling back to a dash when the tenant has no active lease", async () => {
+    const rows = [
+      { tenant_id: "tenant-1", tenant_name: "Farida Khan", property_name: "Green Court", unit_code: "2C", amount_due: 15000 },
+      { tenant_id: "tenant-2", tenant_name: "Rahul Sharma", property_name: null, unit_code: null, amount_due: 5000 },
+    ];
+    const { chain } = createChainMock({ data: rows, error: null });
+    mockCreateClient.mockReturnValue({ from: vi.fn(() => chain) });
+
+    const result = await getCurrentDues("org-a");
+
+    expect(result).toEqual([
+      { tenantId: "tenant-1", tenantName: "Farida Khan", unitLabel: "Green Court · 2C", amountDue: 15000 },
+      { tenantId: "tenant-2", tenantName: "Rahul Sharma", unitLabel: "—", amountDue: 5000 },
+    ]);
+  });
+
+  it("drops rows missing required fields instead of rendering a broken entry", async () => {
+    const rows = [
+      { tenant_id: null, tenant_name: null, property_name: null, unit_code: null, amount_due: null },
+      { tenant_id: "tenant-1", tenant_name: "Farida Khan", property_name: "Green Court", unit_code: "2C", amount_due: 15000 },
+    ];
+    const { chain } = createChainMock({ data: rows, error: null });
+    mockCreateClient.mockReturnValue({ from: vi.fn(() => chain) });
+
+    const result = await getCurrentDues("org-a");
+
+    expect(result).toEqual([{ tenantId: "tenant-1", tenantName: "Farida Khan", unitLabel: "Green Court · 2C", amountDue: 15000 }]);
+  });
+
+  it("throws a descriptive error rather than swallowing a query failure", async () => {
+    const { chain } = createChainMock({ data: null, error: { message: "connection reset" } });
+    mockCreateClient.mockReturnValue({ from: vi.fn(() => chain) });
+
+    await expect(getCurrentDues("org-a")).rejects.toThrow(/Failed to load current dues/);
   });
 });

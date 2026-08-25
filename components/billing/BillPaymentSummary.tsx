@@ -1,5 +1,6 @@
 import type { BillDetail } from "@/lib/queries/bills";
 import { ApplyCreditDialog } from "./ApplyCreditDialog";
+import gridStyles from "@/components/ui/ResponsiveGrid.module.css";
 
 function formatCurrency(amount: number, currencyCode: string): string {
   return new Intl.NumberFormat("en-IN", { style: "currency", currency: currencyCode, maximumFractionDigits: 2 }).format(amount);
@@ -40,7 +41,7 @@ export function BillPaymentSummary({
     canWrite && CREDIT_APPLICATION_ELIGIBLE_STATUSES.includes(bill.status) && availableCredit > 0 && outstanding > 0;
 
   return (
-    <div className="card" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)" }}>
+    <div className={["card", gridStyles.cols4].join(" ")} style={{ display: "grid" }}>
       <div style={{ padding: "16px 18px", borderRight: "2px solid var(--color-divider)" }}>
         <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--color-neutral-700)", marginBottom: 8 }}>
           Paid

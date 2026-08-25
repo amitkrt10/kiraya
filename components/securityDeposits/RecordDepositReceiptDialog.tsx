@@ -87,7 +87,7 @@ export function RecordDepositReceiptDialog({
           ) : null}
 
           {deposit ? (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12, marginBottom: 14 }}>
+            <div className={styles.grid} style={{ display: "grid", gap: 12, marginBottom: 14 }}>
               <div>
                 <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--color-neutral-700)" }}>Required</div>
                 <div style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 18 }}>
@@ -102,7 +102,7 @@ export function RecordDepositReceiptDialog({
               </div>
             </div>
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12, marginBottom: 14 }}>
+            <div className={styles.grid} style={{ display: "grid", gap: 12, marginBottom: 14 }}>
               <Input label="Deposit Reference" name="depositReference" required error={fieldError("depositReference")} />
               <Input label="Required Amount" name="requiredAmount" type="number" step="any" min={0} required error={fieldError("requiredAmount")} />
             </div>

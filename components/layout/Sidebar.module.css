@@ -5,6 +5,26 @@
   flex-direction: column;
 }
 
+/* Below the breakpoint, the sidebar leaves normal document flow entirely
+   (so it can never contribute to the page's content width) and becomes an
+   off-canvas panel toggled by AppShell/AdminShell's mobile-nav state —
+   same <aside> element, same nav content, just repositioned. */
+@media (max-width: 1023px) {
+  .sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 60;
+    width: min(280px, 85vw);
+    flex: 0 0 auto;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+  }
+
+  .sidebarOpen {
+    transform: translateX(0);
+  }
+}
+
 .light {
   background: var(--color-bg);
   color: var(--color-text);

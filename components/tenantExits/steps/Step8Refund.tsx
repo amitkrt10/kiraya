@@ -13,6 +13,7 @@ import { DepositRefundStatusTag } from "@/components/tenantExits/DepositRefundSt
 import { CreditRefundStatusTag } from "@/components/tenantExits/CreditRefundStatusTag";
 import { createDepositRefundAction, createCreditRefundAction, type TenantExitActionState } from "@/lib/actions/tenantExits";
 import type { ExitSettlementRow, DepositRefundRow, TenantCreditRefundRow } from "@/lib/queries/tenantExits";
+import gridStyles from "@/components/ui/ResponsiveGrid.module.css";
 
 function formatCurrency(amount: number, currencyCode: string): string {
   return new Intl.NumberFormat("en-IN", { style: "currency", currency: currencyCode, maximumFractionDigits: 2 }).format(amount);
@@ -96,7 +97,7 @@ export function Step8Refund({
         Two separate money sources, two separate actions — shown separately on purpose.
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 24 }}>
+      <div className={gridStyles.cols2} style={{ display: "grid", gap: 20, marginBottom: 24 }}>
         {/* ---- CARD A: TENANT CREDIT ---- */}
         <div className="card" style={{ padding: 0, display: "flex", flexDirection: "column" }}>
           <div style={{ padding: "16px 20px", borderBottom: "2px solid var(--color-divider)" }}>

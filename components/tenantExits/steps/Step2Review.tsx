@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/Card";
 import { LeaseStatusTag } from "@/components/leases/LeaseStatusTag";
 import type { LeaseDetail } from "@/lib/queries/leases";
 import type { RentRuleRow } from "@/lib/queries/rentRules";
+import gridStyles from "@/components/ui/ResponsiveGrid.module.css";
 
 function formatCurrency(amount: number, currencyCode: string): string {
   return new Intl.NumberFormat("en-IN", { style: "currency", currency: currencyCode, maximumFractionDigits: 2 }).format(amount);
@@ -27,7 +28,7 @@ export function Step2Review({
       </div>
 
       <Card>
-        <div style={{ padding: 24, display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px 32px" }}>
+        <div className={gridStyles.cols2} style={{ padding: 24, display: "grid", gap: "20px 32px" }}>
           <div>
             <div style={{ fontSize: 11, textTransform: "uppercase", color: "var(--color-neutral-700)", marginBottom: 4 }}>Tenant</div>
             <div style={{ fontWeight: 600 }}>{lease.tenants?.display_name ?? "—"}</div>

@@ -12,6 +12,7 @@ import { useToast } from "@/components/ui/Toast";
 import { addSettlementAdjustmentAction, type TenantExitActionState } from "@/lib/actions/tenantExits";
 import { SETTLEMENT_ADJUSTMENT_TYPES } from "@/lib/validation/tenantExit";
 import type { ExitSettlementItemRow } from "@/lib/queries/tenantExits";
+import gridStyles from "@/components/ui/ResponsiveGrid.module.css";
 
 function formatCurrency(amount: number, currencyCode: string): string {
   return new Intl.NumberFormat("en-IN", { style: "currency", currency: currencyCode, maximumFractionDigits: 2 }).format(amount);
@@ -111,7 +112,7 @@ export function Step5Adjustments({
               <Alert variant="error">{state.error}</Alert>
             </div>
           ) : null}
-          <form action={formAction} style={{ display: "grid", gridTemplateColumns: "160px 1fr 140px auto", gap: 14, alignItems: "end" }}>
+          <form action={formAction} className={gridStyles.formRow} style={{ display: "grid", gap: 14, alignItems: "end" }}>
             <Select label="Type" name="itemType" options={TYPE_OPTIONS} required error={fieldError("itemType")} />
             <Input label="Description" name="description" required error={fieldError("description")} />
             <Input label="Amount" name="amount" type="number" step="any" min={0.01} required error={fieldError("amount")} />

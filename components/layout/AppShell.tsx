@@ -1,4 +1,7 @@
-import { ReactNode } from "react";
+"use client";
+
+import { ReactNode, useState } from "react";
+import { usePathname } from "next/navigation";
 import { AppSidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
 import { OrgRouteHeading } from "@/components/layout/RouteHeading";
@@ -28,14 +31,37 @@ export function AppShell({
   isViewer,
   children,
 }: AppShellProps) {
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const pathname = usePathname();
+
+  // Closes the off-canvas sidebar after any navigation, regardless of which
+  // nav link (or in-page link) triggered it — simpler and more reliable
+  // than wiring an onClick through every NavItem. Adjusting state during
+  // render (React's recommended pattern for "reset state when a prop
+  // changes") rather than in an effect, which would cause an extra render.
+  const [prevPathname, setPrevPathname] = useState(pathname);
+  if (pathname !== prevPathname) {
+    setPrevPathname(pathname);
+    setMobileNavOpen(false);
+  }
+
   return (
     <div className={styles.root}>
+      {mobileNavOpen ? (
+        <button
+          type="button"
+          className={styles.backdropVisible}
+          aria-label="Close menu overlay"
+          onClick={() => setMobileNavOpen(false)}
+        />
+      ) : null}
       <AppSidebar
         navGroups={orgNavGroups}
         organizations={organizations}
         currentOrganizationId={currentOrganizationId}
         userName={userName}
         roleLabel={roleLabel}
+        mobileOpen={mobileNavOpen}
       />
       <div className={styles.main}>
         <Topbar
@@ -47,6 +73,8 @@ export function AppShell({
               ? "View-only role — you can see all figures below but cannot record payments, finalize bills, or edit records."
               : undefined
           }
+          mobileNavOpen={mobileNavOpen}
+          onMobileNavToggle={() => setMobileNavOpen((open) => !open)}
         />
         <main className={styles.content}>{children}</main>
       </div>

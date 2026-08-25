@@ -1,7 +1,8 @@
 import { getRequestContext } from "@/lib/context/current";
-import { getOrganizationDashboard, getRecentPayments, getUpcomingLeaseExpiries } from "@/lib/queries/dashboard";
+import { getOrganizationDashboard, getRecentPayments, getUpcomingLeaseExpiries, getCurrentDues } from "@/lib/queries/dashboard";
 import { getBillStatusCounts, getBillDueBreakdown } from "@/lib/queries/bills";
 import { DashboardKpiStrip } from "@/components/dashboard/DashboardKpiStrip";
+import { CurrentDuesTable } from "@/components/dashboard/CurrentDuesTable";
 import { CollectionPerformanceChart } from "@/components/dashboard/CollectionPerformanceChart";
 import { RecentPaymentsTable } from "@/components/dashboard/RecentPaymentsTable";
 import { PendingActionsPanel } from "@/components/dashboard/PendingActionsPanel";
@@ -17,17 +18,25 @@ export default async function DashboardPage() {
 
   const organizationId = context.organization.organizationId;
 
-  const [dashboard, recentPayments, leaseExpiries, billStatusCounts, dueBreakdown] = await Promise.all([
+  const [dashboard, recentPayments, leaseExpiries, billStatusCounts, dueBreakdown, currentDues] = await Promise.all([
     getOrganizationDashboard(organizationId),
     getRecentPayments(organizationId),
     getUpcomingLeaseExpiries(organizationId),
     getBillStatusCounts(organizationId),
     getBillDueBreakdown(organizationId),
+    getCurrentDues(organizationId),
   ]);
 
   return (
     <div>
       <DashboardKpiStrip latest={dashboard.latest} overdueCount={dueBreakdown.overdueCount} />
+
+      <div className={styles.panel} style={{ marginBottom: 28 }}>
+        <div className={styles.sectionHeading} style={{ marginBottom: 16 }}>
+          Current Dues
+        </div>
+        <CurrentDuesTable dues={currentDues} />
+      </div>
 
       <div className={styles.twoColumn}>
         <div className={styles.left}>

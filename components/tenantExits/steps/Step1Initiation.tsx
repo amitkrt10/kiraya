@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/Input";
 import { Alert } from "@/components/ui/Alert";
 import { initiateTenantExitAction, type TenantExitActionState } from "@/lib/actions/tenantExits";
 import type { LeaseDetail } from "@/lib/queries/leases";
+import gridStyles from "@/components/ui/ResponsiveGrid.module.css";
 
 const initialState: TenantExitActionState = {};
 
@@ -34,7 +35,7 @@ export function Step1Initiation({ lease }: { lease: LeaseDetail }) {
 
       <form action={formAction}>
         <Card>
-          <div style={{ padding: 24, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 18 }}>
+          <div className={gridStyles.cols3} style={{ padding: 24, display: "grid", gap: 18 }}>
             <Input label="Notice Date" name="noticeDate" type="date" error={fieldError("noticeDate")} />
             <Input label="Planned Exit Date" name="plannedExitDate" type="date" error={fieldError("plannedExitDate")} />
             <Input label="Handover Date" name="handoverDate" type="date" error={fieldError("handoverDate")} />

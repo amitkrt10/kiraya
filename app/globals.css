@@ -262,6 +262,15 @@ img {
   border-radius: var(--radius);
 }
 
+/* Mobile-only: the same heavy 2px rule-width that reads as intentional
+   structure on desktop feels like a wireframe on a phone screen, where
+   every card is stacked full-width. Desktop is untouched. */
+@media (max-width: 767px) {
+  .card {
+    border-width: 1px;
+  }
+}
+
 .skeleton {
   background: var(--color-neutral-100);
   position: relative;

@@ -6,11 +6,13 @@
 }
 
 .left {
+  min-width: 0;
   border-right: 2px solid var(--color-divider);
   padding: 20px;
 }
 
 .right {
+  min-width: 0;
   padding: 20px;
 }
 
@@ -49,5 +51,30 @@
   .left {
     border-right: none;
     border-bottom: 2px solid var(--color-divider);
+  }
+}
+
+@media (max-width: 767px) {
+  .twoColumn {
+    border-width: 1px;
+    margin-bottom: 20px;
+  }
+
+  .left,
+  .right {
+    padding: 16px;
+  }
+
+  .left {
+    border-bottom-width: 1px;
+  }
+
+  .panel {
+    border-width: 1px;
+    padding: 16px;
+  }
+
+  .sectionHeading {
+    font-size: 15px;
   }
 }

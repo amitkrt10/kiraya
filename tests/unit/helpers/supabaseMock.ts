@@ -14,7 +14,7 @@ export function createChainMock(terminalResult: { data: unknown; error: unknown;
   const calls: ChainCall[] = [];
   const chain: Record<string, unknown> = {};
 
-  const chainableMethods = ["select", "insert", "update", "eq", "in", "or", "order", "range", "limit", "gte", "lte", "lt", "ilike"];
+  const chainableMethods = ["select", "insert", "update", "eq", "in", "or", "order", "range", "limit", "gt", "gte", "lte", "lt", "ilike"];
   for (const method of chainableMethods) {
     chain[method] = vi.fn((...args: unknown[]) => {
       calls.push({ method, args });

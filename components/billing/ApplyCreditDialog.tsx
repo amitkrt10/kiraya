@@ -89,7 +89,7 @@ export function ApplyCreditDialog({
             {bill.tenants?.display_name ?? "This tenant"} · {bill.period_start} – {bill.period_end}
           </p>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12, margin: "14px 0" }}>
+          <div className={styles.grid} style={{ display: "grid", gap: 12, margin: "14px 0" }}>
             <div>
               <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--color-neutral-700)" }}>
                 Available Credit

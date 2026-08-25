@@ -52,13 +52,24 @@
 @media (max-width: 767px) {
   .tiles {
     grid-template-columns: repeat(2, 1fr);
+    border-width: 1px;
+    margin-bottom: 20px;
+  }
+
+  .tile {
+    padding: 14px;
+    border-right-width: 1px;
   }
 
   .tile:nth-child(3n) {
-    border-right: 2px solid var(--color-divider);
+    border-right: 1px solid var(--color-divider);
   }
 
   .tile:nth-child(2n) {
     border-right: none;
+  }
+
+  .value {
+    font-size: 22px;
   }
 }

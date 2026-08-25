@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Printer } from "lucide-react";
 import { ExitSettlementStatusTag } from "@/components/tenantExits/ExitSettlementStatusTag";
 import type { ExitTenantStatementRow, ExitSettlementRow } from "@/lib/queries/tenantExits";
+import gridStyles from "@/components/ui/ResponsiveGrid.module.css";
 
 function formatCurrency(amount: number | null, currencyCode: string): string {
   return new Intl.NumberFormat("en-IN", { style: "currency", currency: currencyCode, maximumFractionDigits: 2 }).format(amount ?? 0);
@@ -58,7 +59,7 @@ export function Step7Statement({
           {statement.settlement_status ? <ExitSettlementStatusTag status={statement.settlement_status} /> : null}
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px 32px", fontSize: 13, marginBottom: 20 }}>
+        <div className={gridStyles.cols2} style={{ display: "grid", gap: "16px 32px", fontSize: 13, marginBottom: 20 }}>
           <div>
             <span style={{ color: "var(--color-neutral-700)" }}>Tenant</span>
             <br />
@@ -114,7 +115,7 @@ export function Step7Statement({
           </tbody>
         </table>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 4 }}>
+        <div className={gridStyles.cols2} style={{ display: "grid", gap: 16, marginBottom: 4 }}>
           <div style={{ border: "1px solid var(--color-neutral-300)", padding: "14px 16px" }}>
             <div style={{ fontSize: 11, color: "var(--color-neutral-700)", marginBottom: 4 }}>Credit-Origin Refundable</div>
             <div className="num" style={{ fontWeight: 700, fontSize: 16 }}>{formatCurrency(settlement.credit_origin_refundable, currencyCode)}</div>

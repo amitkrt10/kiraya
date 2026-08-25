@@ -1,5 +1,6 @@
 import { DepositStatusTag } from "./DepositStatusTag";
 import type { SecurityDepositRow } from "@/lib/queries/securityDeposits";
+import gridStyles from "@/components/ui/ResponsiveGrid.module.css";
 
 function formatCurrency(amount: number, currencyCode: string): string {
   return new Intl.NumberFormat("en-IN", { style: "currency", currency: currencyCode, maximumFractionDigits: 2 }).format(amount);
@@ -29,7 +30,7 @@ export function DepositSummary({ deposit, held }: { deposit: SecurityDepositRow;
         <DepositStatusTag status={deposit.status} />
         <span style={{ fontSize: 12, color: "var(--color-neutral-700)" }}>{deposit.deposit_reference}</span>
       </div>
-      <div className="card" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", marginBottom: 20 }}>
+      <div className={["card", gridStyles.cols5].join(" ")} style={{ display: "grid", marginBottom: 20 }}>
         {tiles.map((tile, index) => (
           <div
             key={tile.label}

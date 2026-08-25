@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Search, Eye } from "lucide-react";
+import { Search, Eye, Menu, X } from "lucide-react";
 import styles from "./Topbar.module.css";
 
 export interface TopbarProps {
@@ -8,12 +8,34 @@ export interface TopbarProps {
   actions?: ReactNode;
   userMenu: ReactNode;
   viewOnlyBanner?: string;
+  /** Only rendered (and only visible, via CSS, below the sidebar's collapse breakpoint) when the caller wires up mobile-nav state. */
+  mobileNavOpen?: boolean;
+  onMobileNavToggle?: () => void;
 }
 
-export function Topbar({ titleSlot, searchPlaceholder, actions, userMenu, viewOnlyBanner }: TopbarProps) {
+export function Topbar({
+  titleSlot,
+  searchPlaceholder,
+  actions,
+  userMenu,
+  viewOnlyBanner,
+  mobileNavOpen,
+  onMobileNavToggle,
+}: TopbarProps) {
   return (
     <>
       <header className={styles.topbar}>
+        {onMobileNavToggle ? (
+          <button
+            type="button"
+            className={styles.menuButton}
+            onClick={onMobileNavToggle}
+            aria-label={mobileNavOpen ? "Close menu" : "Open menu"}
+            aria-expanded={mobileNavOpen}
+          >
+            {mobileNavOpen ? <X width={18} height={18} aria-hidden="true" /> : <Menu width={18} height={18} aria-hidden="true" />}
+          </button>
+        ) : null}
         {titleSlot}
         <div className={styles.actions}>
           {searchPlaceholder ? (

@@ -36,3 +36,11 @@
   color: var(--color-neutral-700);
   font-size: 13px;
 }
+
+@media (max-width: 767px) {
+  .list,
+  .item,
+  .empty {
+    border-width: 1px;
+  }
+}

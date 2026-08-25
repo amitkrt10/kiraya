@@ -85,6 +85,7 @@ test.describe("Organization Dashboard", () => {
     await expect(main.getByText(/^Collected \(/)).toBeVisible();
 
     // Section headings from the approved design.
+    await expect(main.getByText("Current Dues")).toBeVisible();
     await expect(main.getByText("Collection Performance")).toBeVisible();
     await expect(main.getByText("Recent Payments")).toBeVisible();
     await expect(main.getByText("Pending Actions")).toBeVisible();
@@ -124,7 +125,14 @@ test.describe("Organization Dashboard", () => {
 
     // Capture whatever Org A's most recent payment tenant actually is today —
     // never hardcoded, so this stays correct as fixtures accumulate over time.
-    const firstOrgAPaymentRow = page.locator("main table tbody tr").first();
+    // Scoped to the table that actually follows the "Recent Payments" heading
+    // (not just "the first table in main") — the Current Dues table now
+    // renders above it, so a bare "main table tbody tr" would grab the wrong
+    // table's first row.
+    const firstOrgAPaymentRow = page
+      .locator("main")
+      .getByText("Recent Payments", { exact: true })
+      .locator("xpath=following::table[1]/tbody/tr[1]");
     const hasOrgAPayment = await firstOrgAPaymentRow.isVisible().catch(() => false);
     test.skip(!hasOrgAPayment, "Org A has no recorded payments yet to probe cross-org leakage against.");
     const orgAPaymentTenant = (await firstOrgAPaymentRow.locator("td").first().textContent())!.trim();
@@ -134,6 +142,28 @@ test.describe("Organization Dashboard", () => {
     await expect(page.locator("main").getByText("Properties", { exact: true }).first()).toBeVisible({ timeout: DATA_LOAD_TIMEOUT });
     // Org A's tenant name never appears anywhere on Org B's fully-rendered dashboard.
     await expect(page.getByText(orgAPaymentTenant, { exact: true })).not.toBeVisible();
+    await signOut(page);
+  });
+
+  test("Org B's dashboard never shows Org A's Current Dues data", async ({ page }) => {
+    await login(page, orgAEmail!, orgAPassword!);
+    await expect(page.locator("main").getByText("Properties", { exact: true }).first()).toBeVisible({ timeout: DATA_LOAD_TIMEOUT });
+
+    // Same technique as the Recent Payments leakage test above, scoped to
+    // the table following the "Current Dues" heading specifically.
+    const firstOrgADueRow = page
+      .locator("main")
+      .getByText("Current Dues", { exact: true })
+      .locator("xpath=following::table[1]/tbody/tr[1]");
+    const hasOrgADue = await firstOrgADueRow.isVisible().catch(() => false);
+    test.skip(!hasOrgADue, "Org A has no tenant with a current due yet to probe cross-org leakage against.");
+    // Second cell is the tenant name (first cell is the unit label).
+    const orgATenantWithDue = (await firstOrgADueRow.locator("td").nth(1).textContent())!.trim();
+    await signOut(page);
+
+    await login(page, orgBEmail!, orgBPassword!);
+    await expect(page.locator("main").getByText("Properties", { exact: true }).first()).toBeVisible({ timeout: DATA_LOAD_TIMEOUT });
+    await expect(page.getByText(orgATenantWithDue, { exact: true })).not.toBeVisible();
     await signOut(page);
   });
 

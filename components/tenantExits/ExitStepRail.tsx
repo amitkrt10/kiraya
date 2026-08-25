@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Check } from "lucide-react";
 import { EXIT_STEPS } from "@/lib/tenantExitSteps";
+import styles from "./ExitWizardLayout.module.css";
 
 export function ExitStepRail({
   exitReference,
@@ -15,10 +16,8 @@ export function ExitStepRail({
 }) {
   return (
     <div
+      className={styles.rail}
       style={{
-        width: 260,
-        flex: "0 0 auto",
-        borderRight: "2px solid var(--color-divider)",
         padding: "28px 20px",
         background: "var(--color-surface)",
       }}

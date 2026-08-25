@@ -8,6 +8,7 @@ export type OrganizationDashboardRow = Database["kiraya"]["Views"]["v_organizati
 const CHART_MONTHS = 6;
 const RECENT_PAYMENTS_LIMIT = 5;
 const LEASE_EXPIRY_LIMIT = 3;
+const CURRENT_DUES_LIMIT = 10;
 
 export interface DashboardData {
   /** Most recent month with billing/payment activity, or null for an organization with none yet. */
@@ -85,5 +86,49 @@ export async function getUpcomingLeaseExpiries(organizationId: string): Promise<
       unitLabel: row.property_name ? `${row.property_name} · ${row.unit_code}` : row.unit_code,
       daysUntilExpiry: row.days_until_expiry,
       alertStatus: row.alert_status,
+    }));
+}
+
+export interface CurrentDueRow {
+  tenantId: string;
+  tenantName: string;
+  unitLabel: string;
+  amountDue: number;
+}
+
+/**
+ * "Whose rent is currently pending, and how much." amount_due is
+ * kiraya.v_tenant_outstanding's own column, itself a thin wrapper over
+ * kiraya.get_tenant_due() — the same authoritative RPC getTenantOutstanding()
+ * calls for a single tenant (lib/queries/financial.ts) and the same one
+ * kiraya.v_organization_dashboard sums for the KPI strip's own "Outstanding"
+ * tile. Nothing is computed here — only filtered (amount_due > 0, credits
+ * excluded) and ordered. This view existed already (P3.1, reporting-only,
+ * previously unused by any screen) — same precedent as
+ * getUpcomingLeaseExpiries()'s reuse of v_lease_expiry_alerts.
+ */
+export async function getCurrentDues(organizationId: string): Promise<CurrentDueRow[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("v_tenant_outstanding")
+    .select("tenant_id, tenant_name, property_name, unit_code, amount_due")
+    .eq("organization_id", organizationId)
+    .gt("amount_due", 0)
+    .order("amount_due", { ascending: false })
+    .limit(CURRENT_DUES_LIMIT);
+
+  if (error) {
+    throw new Error(`Failed to load current dues: ${error.message}`);
+  }
+
+  return (data ?? [])
+    .filter((row): row is typeof row & { tenant_id: string; tenant_name: string; amount_due: number } =>
+      Boolean(row.tenant_id && row.tenant_name && row.amount_due !== null),
+    )
+    .map((row) => ({
+      tenantId: row.tenant_id,
+      tenantName: row.tenant_name,
+      unitLabel: row.unit_code ? (row.property_name ? `${row.property_name} · ${row.unit_code}` : row.unit_code) : "—",
+      amountDue: row.amount_due,
     }));
 }

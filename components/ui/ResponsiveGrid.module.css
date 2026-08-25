@@ -1,0 +1,43 @@
+/* Shared column-count variants for the many inline CSS-grid layouts across
+   the app (stat strips, form rows, review panels) that previously hardcoded
+   gridTemplateColumns via inline styles — those can't be reached by a media
+   query, which is exactly why they broke on narrow viewports. Desktop
+   column counts are unchanged; each variant only collapses below 640px. */
+
+.cols2 {
+  grid-template-columns: 1fr 1fr;
+}
+
+.cols3 {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.cols4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.cols5 {
+  grid-template-columns: repeat(5, 1fr);
+}
+
+/* Step5Adjustments' inline add-item row: type select, description input,
+   amount input, submit button. */
+.formRow {
+  grid-template-columns: 160px 1fr 140px auto;
+}
+
+@media (max-width: 639px) {
+  .cols2,
+  .cols3 {
+    grid-template-columns: 1fr;
+  }
+
+  .cols4,
+  .cols5 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .formRow {
+    grid-template-columns: 1fr;
+  }
+}
