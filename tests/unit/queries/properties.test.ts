@@ -8,7 +8,7 @@ vi.mock("@/lib/supabase/server", () => ({
   createClient: () => mockCreateClient(),
 }));
 
-const { getProperty } = await import("@/lib/queries/properties");
+const { getProperty, getSuggestedPropertyCode } = await import("@/lib/queries/properties");
 
 describe("getProperty — organization context is respected", () => {
   beforeEach(() => {
@@ -38,5 +38,75 @@ describe("getProperty — organization context is respected", () => {
     const result = await getProperty("prop-1", "org-b");
 
     expect(result).toBeNull();
+  });
+});
+
+describe("getSuggestedPropertyCode — preview only, scoped per organization", () => {
+  beforeEach(() => {
+    mockCreateClient.mockReset();
+  });
+
+  it("suggests PREFIX-001 for an organization with no existing properties in this prefix", async () => {
+    const { chain } = createChainMock({ data: [], error: null });
+    mockCreateClient.mockReturnValue({ from: vi.fn(() => chain) });
+
+    const code = await getSuggestedPropertyCode("org-a", "Rent Management");
+
+    expect(code).toBe("REN-001");
+  });
+
+  it("continues numbering from the highest existing PREFIX-NNN code in this organization", async () => {
+    const { chain } = createChainMock({
+      data: [{ property_code: "REN-001" }, { property_code: "REN-002" }],
+      error: null,
+    });
+    mockCreateClient.mockReturnValue({ from: vi.fn(() => chain) });
+
+    const code = await getSuggestedPropertyCode("org-a", "Rent Management");
+
+    expect(code).toBe("REN-003");
+  });
+
+  it("ignores existing/legacy codes that don't match the generated shape", async () => {
+    const { chain } = createChainMock({
+      data: [{ property_code: "E2E-PROP-A" }, { property_code: "REN-HQ" }, { property_code: "REN-001" }],
+      error: null,
+    });
+    mockCreateClient.mockReturnValue({ from: vi.fn(() => chain) });
+
+    const code = await getSuggestedPropertyCode("org-a", "Rent Management");
+
+    expect(code).toBe("REN-002");
+  });
+
+  it("scopes the lookup to the caller's organization", async () => {
+    const { chain, calls } = createChainMock({ data: [], error: null });
+    mockCreateClient.mockReturnValue({ from: vi.fn(() => chain) });
+
+    await getSuggestedPropertyCode("org-a", "Rent Management");
+
+    expect(callsFor(calls, "eq")).toContainEqual(["organization_id", "org-a"]);
+  });
+
+  it("computes independent numbering for a different organization sharing the same prefix", async () => {
+    const orgAChain = createChainMock({ data: [{ property_code: "REN-001" }], error: null });
+    mockCreateClient.mockReturnValue({ from: vi.fn(() => orgAChain.chain) });
+    const orgACode = await getSuggestedPropertyCode("org-a", "Rent Management");
+
+    const orgBChain = createChainMock({ data: [], error: null });
+    mockCreateClient.mockReturnValue({ from: vi.fn(() => orgBChain.chain) });
+    const orgBCode = await getSuggestedPropertyCode("org-b", "Rent Management");
+
+    expect(orgACode).toBe("REN-002");
+    expect(orgBCode).toBe("REN-001");
+  });
+
+  it("falls back to PREFIX-001 rather than throwing if the lookup query fails", async () => {
+    const { chain } = createChainMock({ data: null, error: { code: "500", message: "boom" } });
+    mockCreateClient.mockReturnValue({ from: vi.fn(() => chain) });
+
+    const code = await getSuggestedPropertyCode("org-a", "Rent Management");
+
+    expect(code).toBe("REN-001");
   });
 });

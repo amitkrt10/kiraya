@@ -169,7 +169,6 @@ function makeStatement(overrides: Partial<ExitTenantStatementRow> = {}): ExitTen
     property_name: "Ridgeview Residency",
     unit_id: "unit-1",
     unit_code: "A-304",
-    unit_name: null,
     occupancy_start_date: "2025-01-01",
     actual_end_date: "2026-03-15",
     settlement_date: "2026-02-01",

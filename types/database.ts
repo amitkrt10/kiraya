@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "12.2.12 (cd3cf9e)"
-  }
   kiraya: {
     Tables: {
       audit_logs: {
@@ -4335,7 +4330,6 @@ export type Database = {
           floor_number: number | null
           id: string
           metadata: Json
-          name: string | null
           organization_id: string
           property_id: string
           status: Database["kiraya"]["Enums"]["unit_status"]
@@ -4353,7 +4347,6 @@ export type Database = {
           floor_number?: number | null
           id?: string
           metadata?: Json
-          name?: string | null
           organization_id: string
           property_id: string
           status?: Database["kiraya"]["Enums"]["unit_status"]
@@ -4371,7 +4364,6 @@ export type Database = {
           floor_number?: number | null
           id?: string
           metadata?: Json
-          name?: string | null
           organization_id?: string
           property_id?: string
           status?: Database["kiraya"]["Enums"]["unit_status"]
@@ -4967,7 +4959,6 @@ export type Database = {
           tenant_name: string | null
           unit_code: string | null
           unit_id: string | null
-          unit_name: string | null
         }
         Relationships: [
           {
@@ -5016,7 +5007,6 @@ export type Database = {
           tenant_name: string | null
           unit_code: string | null
           unit_id: string | null
-          unit_name: string | null
         }
         Relationships: [
           {
@@ -5115,7 +5105,6 @@ export type Database = {
           tenant_name: string | null
           unit_code: string | null
           unit_id: string | null
-          unit_name: string | null
         }
         Relationships: [
           {
@@ -5146,7 +5135,6 @@ export type Database = {
           reading_value: number | null
           unit_code: string | null
           unit_id: string | null
-          unit_name: string | null
           utility_id: string | null
           utility_name: string | null
         }
@@ -5372,7 +5360,6 @@ export type Database = {
           total_amount: number | null
           unit_code: string | null
           unit_id: string | null
-          unit_name: string | null
         }
         Relationships: [
           {
@@ -5614,7 +5601,6 @@ export type Database = {
           tenant_name: string | null
           unit_code: string | null
           unit_id: string | null
-          unit_name: string | null
         }
         Relationships: [
           {
@@ -5643,7 +5629,6 @@ export type Database = {
           tenant_name: string | null
           unit_code: string | null
           unit_id: string | null
-          unit_name: string | null
         }
         Relationships: [
           {
@@ -5921,6 +5906,10 @@ export type Database = {
           p_period_end: string
           p_period_start: string
         }
+        Returns: string
+      }
+      generate_sequential_reference: {
+        Args: { p_prefix: string }
         Returns: string
       }
       generate_utility_bill_items: {
@@ -6379,3 +6368,4 @@ export const Constants = {
     },
   },
 } as const
+

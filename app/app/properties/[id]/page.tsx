@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { getRequestContext } from "@/lib/context/current";
 import { canWriteOrganization } from "@/lib/permissions/resolve";
 import { getProperty, getPropertyUnitCounts } from "@/lib/queries/properties";
-import { getPropertyUnits } from "@/lib/queries/units";
+import { getPropertyUnits, getSuggestedUnitCode } from "@/lib/queries/units";
 import { getUnitTypes } from "@/lib/queries/unitTypes";
 import { getOwners, getPropertyOwnerships } from "@/lib/queries/owners";
 import { getUnitCurrentLeasesByIds } from "@/lib/queries/leases";
@@ -47,10 +47,13 @@ export default async function PropertyDetailPage({
     notFound();
   }
 
-  const currentLeases = await getUnitCurrentLeasesByIds(
-    units.map((unit) => unit.id),
-    organizationId,
-  );
+  const [currentLeases, suggestedUnitCode] = await Promise.all([
+    getUnitCurrentLeasesByIds(
+      units.map((unit) => unit.id),
+      organizationId,
+    ),
+    getSuggestedUnitCode(id, property.name),
+  ]);
 
   return (
     <div>
@@ -69,6 +72,7 @@ export default async function PropertyDetailPage({
         ownerships={ownerships}
         owners={owners}
         canWrite={canWrite}
+        suggestedUnitCode={suggestedUnitCode}
       />
     </div>
   );

@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import { derivePropertyCodePrefix, formatPropertyCode, parsePropertyCodeSuffix } from "@/lib/utils/propertyCode";
 import type { Database } from "@/types/database";
 
 export type PropertyStatus = Database["kiraya"]["Enums"]["property_status"];
@@ -30,6 +31,44 @@ export async function getPropertiesForPicker(organizationId: string): Promise<Pr
   }
 
   return data ?? [];
+}
+
+/**
+ * Best-effort, non-authoritative preview for the Add Property form's
+ * Property Code field — NOT a reservation. It's the highest existing
+ * `PREFIX-NNN` code for this organization, plus one; the field stays
+ * editable, and the existing properties_org_code_unique_idx unique index
+ * (surfaced as a friendly message by translateDatabaseError on conflict)
+ * is what actually guarantees no two properties in an organization ever
+ * end up with the same code, including under concurrent submissions.
+ *
+ * Deliberately swallows a query failure and falls back to `${prefix}-001`
+ * rather than throwing like this file's other queries — this is UX sugar
+ * for prefilling one field, not authoritative data the page depends on to
+ * render, so a hiccup here shouldn't block the Add Property form itself.
+ */
+export async function getSuggestedPropertyCode(
+  organizationId: string,
+  organizationName: string,
+): Promise<string> {
+  const prefix = derivePropertyCodePrefix(organizationName);
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("properties")
+    .select("property_code")
+    .eq("organization_id", organizationId)
+    .ilike("property_code", `${prefix}-%`);
+
+  if (error) {
+    return formatPropertyCode(prefix, 1);
+  }
+
+  const highest = (data ?? []).reduce((max, row) => {
+    const suffix = parsePropertyCodeSuffix(row.property_code, prefix);
+    return suffix !== null && suffix > max ? suffix : max;
+  }, 0);
+
+  return formatPropertyCode(prefix, highest + 1);
 }
 
 export interface GetPropertiesParams {

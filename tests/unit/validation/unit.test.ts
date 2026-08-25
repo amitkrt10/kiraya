@@ -3,7 +3,6 @@ import { unitFormSchema } from "@/lib/validation/unit";
 
 const validInput = {
   unitCode: "A-101",
-  name: "",
   unitTypeId: "",
   description: "",
   status: "VACANT",

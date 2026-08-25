@@ -19,9 +19,18 @@ export interface PropertyFormProps {
   state: PropertyActionState;
   property?: PropertyDetail;
   propertyTypes: PropertyType[];
+  /** Suggested default for a new property's code — only used when property is unset (create mode). */
+  suggestedPropertyCode?: string;
 }
 
-export function PropertyForm({ formId, formAction, state, property, propertyTypes }: PropertyFormProps) {
+export function PropertyForm({
+  formId,
+  formAction,
+  state,
+  property,
+  propertyTypes,
+  suggestedPropertyCode,
+}: PropertyFormProps) {
   const fieldError = (name: string) => state.fieldErrors?.[name]?.[0];
 
   return (
@@ -39,7 +48,7 @@ export function PropertyForm({ formId, formAction, state, property, propertyType
             label="Property Code"
             name="propertyCode"
             required
-            defaultValue={property?.property_code}
+            defaultValue={property?.property_code ?? suggestedPropertyCode}
             error={fieldError("propertyCode")}
           />
           <Input

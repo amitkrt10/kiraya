@@ -80,7 +80,7 @@ export function ExitFilters({ properties, units, tenants }: ExitFiltersProps) {
           placeholder="All units"
           options={unitsForProperty.map((unit) => ({
             value: unit.id,
-            label: unit.name ? `${unit.unit_code} · ${unit.name}` : unit.unit_code,
+            label: unit.unit_code,
           }))}
           value={searchParams.get("unit") ?? ""}
           onChange={(event) => updateParams({ unit: event.target.value || undefined })}

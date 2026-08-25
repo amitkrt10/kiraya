@@ -11,7 +11,6 @@ const STATUS_LABELS: Record<UnitDetail["status"], string> = {
 export function UnitOverview({ unit }: { unit: UnitDetail }) {
   const rows = [
     { label: "Unit Code", value: unit.unit_code },
-    { label: "Name", value: unit.name ?? "" },
     { label: "Property", value: unit.properties?.name ?? "" },
     { label: "Unit Type", value: unit.unit_types?.name ?? "" },
     { label: "Status", value: STATUS_LABELS[unit.status] },

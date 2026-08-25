@@ -7,7 +7,6 @@ export const UNIT_STATUSES = ["VACANT", "OCCUPIED", "MAINTENANCE", "UNAVAILABLE"
 /** Field-level constraints mirror supabase/migrations/20260813000112_kiraya_units.sql exactly. */
 export const unitFormSchema = z.object({
   unitCode: requiredTrimmedString("Unit code"),
-  name: optionalTrimmedString(),
   unitTypeId: optionalTrimmedString(),
   description: optionalTrimmedString(),
   status: z.enum(UNIT_STATUSES),
@@ -23,7 +22,6 @@ export type UnitFormValues = z.infer<typeof unitFormSchema>;
 export function parseUnitFormData(formData: FormData) {
   return unitFormSchema.safeParse({
     unitCode: formData.get("unitCode"),
-    name: formData.get("name"),
     unitTypeId: formData.get("unitTypeId"),
     description: formData.get("description"),
     status: formData.get("status"),

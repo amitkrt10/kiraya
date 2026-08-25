@@ -80,7 +80,6 @@ export interface LeaseDetail extends LeaseRow {
   units: {
     id: string;
     unit_code: string;
-    name: string | null;
     properties: { id: string; name: string; property_code: string } | null;
   } | null;
 }
@@ -91,7 +90,7 @@ export async function getLease(leaseId: string, organizationId: string): Promise
   const { data, error } = await supabase
     .from("leases")
     .select(
-      "*, tenants(id, display_name, tenant_code), units(id, unit_code, name, properties(id, name, property_code))",
+      "*, tenants(id, display_name, tenant_code), units(id, unit_code, properties(id, name, property_code))",
     )
     .eq("id", leaseId)
     .eq("organization_id", organizationId)

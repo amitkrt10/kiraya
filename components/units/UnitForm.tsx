@@ -20,9 +20,18 @@ export interface UnitFormProps {
   state: UnitActionState;
   unit?: UnitDetail;
   unitTypes: UnitType[];
+  /** Suggested default for a new unit's code — only used when unit is unset (create mode). */
+  suggestedUnitCode?: string;
 }
 
-export function UnitForm({ formId, formAction, state, unit, unitTypes }: UnitFormProps) {
+export function UnitForm({
+  formId,
+  formAction,
+  state,
+  unit,
+  unitTypes,
+  suggestedUnitCode,
+}: UnitFormProps) {
   const fieldError = (name: string) => state.fieldErrors?.[name]?.[0];
 
   return (
@@ -40,10 +49,9 @@ export function UnitForm({ formId, formAction, state, unit, unitTypes }: UnitFor
             label="Unit Code"
             name="unitCode"
             required
-            defaultValue={unit?.unit_code}
+            defaultValue={unit?.unit_code ?? suggestedUnitCode}
             error={fieldError("unitCode")}
           />
-          <Input label="Name" name="name" defaultValue={unit?.name ?? ""} error={fieldError("name")} />
           <Select
             label="Unit Type"
             name="unitTypeId"

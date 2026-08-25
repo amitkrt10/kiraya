@@ -9,7 +9,6 @@ function toUnitFields(values: UnitFormValues) {
   return {
     unit_type_id: values.unitTypeId ?? null,
     unit_code: values.unitCode,
-    name: values.name ?? null,
     description: values.description ?? null,
     status: values.status,
     floor_number: values.floorNumber ?? null,

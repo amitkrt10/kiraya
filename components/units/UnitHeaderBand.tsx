@@ -29,7 +29,7 @@ export function UnitHeaderBand({
       <div className={styles.band}>
         <div>
           <div className={styles.titleRow}>
-            <div className={styles.name}>{unit.name ? `${unit.unit_code} · ${unit.name}` : unit.unit_code}</div>
+            <div className={styles.name}>{unit.unit_code}</div>
             {unit.unit_types ? <span className="tag tag-neutral">{unit.unit_types.name}</span> : null}
             <UnitStatusTag status={unit.status} />
           </div>

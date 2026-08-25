@@ -17,9 +17,17 @@ export interface UnitFormDrawerProps {
   propertyId: string;
   unit?: UnitDetail;
   unitTypes: UnitType[];
+  /** Suggested default for a new unit's code — ignored in edit mode. */
+  suggestedUnitCode?: string;
 }
 
-export function UnitFormDrawer({ mode, propertyId, unit, unitTypes }: UnitFormDrawerProps) {
+export function UnitFormDrawer({
+  mode,
+  propertyId,
+  unit,
+  unitTypes,
+  suggestedUnitCode,
+}: UnitFormDrawerProps) {
   const [open, setOpen] = useState(false);
   const { show } = useToast();
   const formId = useId();
@@ -67,7 +75,14 @@ export function UnitFormDrawer({ mode, propertyId, unit, unitTypes }: UnitFormDr
           </>
         }
       >
-        <UnitForm formId={formId} formAction={formAction} state={state} unit={unit} unitTypes={unitTypes} />
+        <UnitForm
+          formId={formId}
+          formAction={formAction}
+          state={state}
+          unit={unit}
+          unitTypes={unitTypes}
+          suggestedUnitCode={mode === "create" ? suggestedUnitCode : undefined}
+        />
       </Drawer>
     </>
   );

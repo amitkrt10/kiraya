@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import { deriveUnitCodePrefix, formatUnitCode, parseUnitCodeSuffix } from "@/lib/utils/unitCode";
 import type { Database } from "@/types/database";
 
 export type UnitStatus = Database["kiraya"]["Enums"]["unit_status"];
@@ -29,15 +30,55 @@ export async function getPropertyUnits(
   return data ?? [];
 }
 
+/**
+ * Best-effort, non-authoritative preview for the Add Unit form's Unit
+ * Code field — NOT a reservation. It's the highest existing `PREFIX-NNN`
+ * code for this property, plus one; the field stays editable, and the
+ * existing units_property_code_unique_idx unique index (surfaced as a
+ * friendly message by translateDatabaseError on conflict) is what
+ * actually guarantees no two units in a property ever end up with the
+ * same code, including under concurrent submissions — same architecture
+ * as getSuggestedPropertyCode() in lib/queries/properties.ts (P6.1-B).
+ *
+ * Scoped by propertyId alone (no separate organizationId check): unlike
+ * getPropertyUnits(), this is a preview, not the authoritative unit list,
+ * and RLS already prevents selecting another organization's units
+ * regardless of which property_id is passed in.
+ *
+ * Deliberately swallows a query failure and falls back to `${prefix}-001`
+ * rather than throwing, for the same reason as getSuggestedPropertyCode():
+ * this is UX sugar for prefilling one field, not data the page depends on
+ * to render.
+ */
+export async function getSuggestedUnitCode(propertyId: string, propertyName: string): Promise<string> {
+  const prefix = deriveUnitCodePrefix(propertyName);
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("units")
+    .select("unit_code")
+    .eq("property_id", propertyId)
+    .ilike("unit_code", `${prefix}-%`);
+
+  if (error) {
+    return formatUnitCode(prefix, 1);
+  }
+
+  const highest = (data ?? []).reduce((max, row) => {
+    const suffix = parseUnitCodeSuffix(row.unit_code, prefix);
+    return suffix !== null && suffix > max ? suffix : max;
+  }, 0);
+
+  return formatUnitCode(prefix, highest + 1);
+}
+
 export interface UnitPickerItem {
   id: string;
   unit_code: string;
-  name: string | null;
   property_id: string;
 }
 
 /**
- * Lightweight, org-wide unit list (id/code/name/property_id only) for the
+ * Lightweight, org-wide unit list (id/code/property_id only) for the
  * lease-create form's cascading Property → Unit picker — fetched once and
  * filtered client-side by property, rather than a round-trip per property
  * selection.
@@ -46,7 +87,7 @@ export async function getUnitsForPicker(organizationId: string): Promise<UnitPic
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("units")
-    .select("id, unit_code, name, property_id")
+    .select("id, unit_code, property_id")
     .eq("organization_id", organizationId)
     .order("unit_code", { ascending: true });
 

@@ -27,18 +27,25 @@ export function UnitTable({
   unitTypes,
   currentLeases,
   canWrite,
+  suggestedUnitCode,
 }: {
   propertyId: string;
   units: UnitListItem[];
   unitTypes: UnitType[];
   currentLeases: Record<string, LeaseListItem>;
   canWrite: boolean;
+  suggestedUnitCode: string;
 }) {
   return (
     <div>
       {canWrite ? (
         <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 14 }}>
-          <UnitFormDrawer mode="create" propertyId={propertyId} unitTypes={unitTypes} />
+          <UnitFormDrawer
+            mode="create"
+            propertyId={propertyId}
+            unitTypes={unitTypes}
+            suggestedUnitCode={suggestedUnitCode}
+          />
         </div>
       ) : null}
 
@@ -48,7 +55,14 @@ export function UnitTable({
           title="No units yet"
           description="Add the first unit to start tracking this property's inventory."
           action={
-            canWrite ? <UnitFormDrawer mode="create" propertyId={propertyId} unitTypes={unitTypes} /> : undefined
+            canWrite ? (
+              <UnitFormDrawer
+                mode="create"
+                propertyId={propertyId}
+                unitTypes={unitTypes}
+                suggestedUnitCode={suggestedUnitCode}
+              />
+            ) : undefined
           }
         />
       ) : (
@@ -71,7 +85,7 @@ export function UnitTable({
               return (
                 <TableRow key={unit.id}>
                   <TableCell style={{ fontWeight: 600 }}>
-                    <Link href={`/app/units/${unit.id}`}>{unit.name ? `${unit.unit_code} · ${unit.name}` : unit.unit_code}</Link>
+                    <Link href={`/app/units/${unit.id}`}>{unit.unit_code}</Link>
                   </TableCell>
                   <TableCell>
                     <UnitStatusTag status={unit.status} />

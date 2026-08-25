@@ -95,7 +95,7 @@ export function LeaseCreateForm({ tenants, properties, units, preselectedUnitId 
             }
             options={unitsForProperty.map((unit) => ({
               value: unit.id,
-              label: unit.name ? `${unit.unit_code} · ${unit.name}` : unit.unit_code,
+              label: unit.unit_code,
             }))}
             defaultValue={preselectedUnitId}
             error={fieldError("lease.unitId")}

@@ -16,9 +16,16 @@ export interface PropertyFormDrawerProps {
   mode: "create" | "edit";
   property?: PropertyDetail;
   propertyTypes: PropertyType[];
+  /** Suggested default for a new property's code — ignored in edit mode. */
+  suggestedPropertyCode?: string;
 }
 
-export function PropertyFormDrawer({ mode, property, propertyTypes }: PropertyFormDrawerProps) {
+export function PropertyFormDrawer({
+  mode,
+  property,
+  propertyTypes,
+  suggestedPropertyCode,
+}: PropertyFormDrawerProps) {
   const [open, setOpen] = useState(false);
   const { show } = useToast();
   const formId = useId();
@@ -73,6 +80,7 @@ export function PropertyFormDrawer({ mode, property, propertyTypes }: PropertyFo
           state={state}
           property={property}
           propertyTypes={propertyTypes}
+          suggestedPropertyCode={mode === "create" ? suggestedPropertyCode : undefined}
         />
       </Drawer>
     </>

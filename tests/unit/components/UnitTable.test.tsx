@@ -16,7 +16,6 @@ function makeUnit(overrides: Partial<UnitListItem>): UnitListItem {
     property_id: "prop-1",
     unit_type_id: null,
     unit_code: "A-101",
-    name: null,
     description: null,
     status: "VACANT",
     floor_number: 1,
@@ -34,13 +33,29 @@ function makeUnit(overrides: Partial<UnitListItem>): UnitListItem {
 
 describe("UnitTable", () => {
   it("shows an empty state with no units", () => {
-    render(<UnitTable propertyId="prop-1" units={[]} unitTypes={[]} currentLeases={{}} canWrite={false} />);
+    render(
+      <UnitTable
+        propertyId="prop-1"
+        units={[]}
+        unitTypes={[]}
+        currentLeases={{}}
+        canWrite={false}
+        suggestedUnitCode="TST-001"
+      />,
+    );
     expect(screen.getByText("No units yet")).toBeInTheDocument();
   });
 
   it("renders unit rows with the current column set (not rent/lease-ends columns)", () => {
     render(
-      <UnitTable propertyId="prop-1" units={[makeUnit({})]} unitTypes={[]} currentLeases={{}} canWrite={false} />,
+      <UnitTable
+        propertyId="prop-1"
+        units={[makeUnit({})]}
+        unitTypes={[]}
+        currentLeases={{}}
+        canWrite={false}
+        suggestedUnitCode="TST-001"
+      />,
     );
 
     expect(screen.getByRole("link", { name: "A-101" })).toHaveAttribute("href", "/app/units/unit-1");
@@ -82,6 +97,7 @@ describe("UnitTable", () => {
           },
         }}
         canWrite={false}
+        suggestedUnitCode="TST-001"
       />,
     );
 
@@ -90,7 +106,14 @@ describe("UnitTable", () => {
 
   it("does not show the add-unit action when the viewer can't write", () => {
     render(
-      <UnitTable propertyId="prop-1" units={[makeUnit({})]} unitTypes={[]} currentLeases={{}} canWrite={false} />,
+      <UnitTable
+        propertyId="prop-1"
+        units={[makeUnit({})]}
+        unitTypes={[]}
+        currentLeases={{}}
+        canWrite={false}
+        suggestedUnitCode="TST-001"
+      />,
     );
     expect(screen.queryByRole("button", { name: /Add Unit/i })).not.toBeInTheDocument();
   });

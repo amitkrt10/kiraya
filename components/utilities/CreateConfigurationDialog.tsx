@@ -115,7 +115,7 @@ export function CreateConfigurationDialog({
                 name="unitId"
                 required
                 placeholder="Select a unit…"
-                options={units.map((unit) => ({ value: unit.id, label: unit.name ? `${unit.unit_code} — ${unit.name}` : unit.unit_code }))}
+                options={units.map((unit) => ({ value: unit.id, label: unit.unit_code }))}
               />
             )}
 

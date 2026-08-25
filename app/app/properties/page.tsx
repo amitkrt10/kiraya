@@ -1,7 +1,7 @@
 import { Building2 } from "lucide-react";
 import { getRequestContext } from "@/lib/context/current";
 import { canWriteOrganization } from "@/lib/permissions/resolve";
-import { getProperties, type PropertyStatus } from "@/lib/queries/properties";
+import { getProperties, getSuggestedPropertyCode, type PropertyStatus } from "@/lib/queries/properties";
 import { getPropertyTypes } from "@/lib/queries/propertyTypes";
 import { PropertyTable } from "@/components/properties/PropertyTable";
 import { PropertyFilters } from "@/components/properties/PropertyFilters";
@@ -31,7 +31,7 @@ export default async function PropertiesPage({
   const organizationId = context.organization.organizationId;
   const page = Number(params.page) > 0 ? Number(params.page) : 1;
 
-  const [propertyTypes, result, canWrite] = await Promise.all([
+  const [propertyTypes, result, canWrite, suggestedPropertyCode] = await Promise.all([
     getPropertyTypes(organizationId),
     getProperties({
       organizationId,
@@ -41,6 +41,7 @@ export default async function PropertiesPage({
       page,
     }),
     canWriteOrganization(organizationId),
+    getSuggestedPropertyCode(organizationId, context.organization.organizationName),
   ]);
 
   const hasFilters = Boolean(params.q || params.type || params.status);
@@ -59,7 +60,11 @@ export default async function PropertiesPage({
     <div>
       {canWrite ? (
         <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
-          <PropertyFormDrawer mode="create" propertyTypes={propertyTypes} />
+          <PropertyFormDrawer
+            mode="create"
+            propertyTypes={propertyTypes}
+            suggestedPropertyCode={suggestedPropertyCode}
+          />
         </div>
       ) : null}
 
@@ -76,7 +81,11 @@ export default async function PropertiesPage({
           }
           action={
             !hasFilters && canWrite ? (
-              <PropertyFormDrawer mode="create" propertyTypes={propertyTypes} />
+              <PropertyFormDrawer
+                mode="create"
+                propertyTypes={propertyTypes}
+                suggestedPropertyCode={suggestedPropertyCode}
+              />
             ) : undefined
           }
         />

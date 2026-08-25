@@ -20,6 +20,7 @@ export interface PropertyDetailTabsProps {
   ownerships: PropertyOwnershipItem[];
   owners: OwnerRow[];
   canWrite: boolean;
+  suggestedUnitCode: string;
 }
 
 const TABS = [
@@ -38,6 +39,7 @@ export function PropertyDetailTabs({
   ownerships,
   owners,
   canWrite,
+  suggestedUnitCode,
 }: PropertyDetailTabsProps) {
   const [activeId, setActiveId] = useState("units");
 
@@ -50,6 +52,7 @@ export function PropertyDetailTabs({
           unitTypes={unitTypes}
           currentLeases={currentLeases}
           canWrite={canWrite}
+          suggestedUnitCode={suggestedUnitCode}
         />
       </TabPanel>
       <TabPanel id="overview" activeId={activeId} idPrefix="property-detail">
