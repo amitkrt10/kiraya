@@ -50,10 +50,11 @@ export E2E_ORG_A_DEPOSIT_TENANT_ID="a0000000-0000-4000-a000-0000000000e1"
 # lease/tenant with a received deposit -- seed.sql's exit fixture.
 export E2E_ORG_A_EXIT_TENANT_ID="a0000000-0000-4000-a000-0000000000e3"
 export E2E_ORG_A_EXIT_LEASE_ID="a0000000-0000-4000-a000-00000000003a"
-# E2E_ORG_A_SHARED_UNIT_LEASE_ID / E2E_ORG_A_SHARED_UNIT_ID are deliberately
-# not set: seed.sql does not build a two-lease-sharing-one-unit fixture
-# (see P5.16's final report for why), so that one wizard test stays
-# skipped here with its own clear reason, exactly as intended.
+# tenant-exit-wizard.spec.ts's shared-unit test (P5.17): a unit with two
+# leases -- the one being exited, and a DRAFT "incoming" lease that should
+# keep the unit from being marked VACANT once the exit completes.
+export E2E_ORG_A_SHARED_UNIT_LEASE_ID="a0000000-0000-4000-a000-00000000006f"
+export E2E_ORG_A_SHARED_UNIT_ID="a0000000-0000-4000-a000-00000000005f"
 
 # utilities-meters.spec.ts's finalized-bill-item tests -- seed.sql's util
 # fixture meter, which already has a real, finalized UTILITY bill item.

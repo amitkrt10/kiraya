@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { findCurrentOrganizationName } from "./helpers/fixtures";
 
 /**
  * P5.8A Organization Dashboard — logs in with a real session and drives the
@@ -100,8 +101,16 @@ test.describe("Organization Dashboard", () => {
 
   test("Org A sees its own organization name in the switcher while viewing the dashboard", async ({ page }) => {
     await login(page, orgAEmail!, orgAPassword!);
+    // The actual intent here is "the switcher shows the authenticated
+    // organization's real name", not one specific hardcoded string — a
+    // hardcoded hosted-fixture name would be meaningless (and wrong) run
+    // against any other environment's differently-named Org A (P5.17).
+    // Discovered dynamically via the same authenticated session, matching
+    // this suite's established "discover, then assert" pattern.
+    const orgName = await findCurrentOrganizationName(page);
+    expect(orgName).toBeTruthy();
     // Renders twice (sidebar org switcher + topbar breadcrumb) — .first() is enough to prove it's there.
-    await expect(page.getByText("Kiraya E2E Organization A").first()).toBeVisible();
+    await expect(page.getByText(orgName!).first()).toBeVisible();
     await signOut(page);
   });
 

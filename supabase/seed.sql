@@ -77,6 +77,9 @@ declare
     v_unit_dep_existing_id uuid;
     v_unit_dep_zero_id uuid;
     v_unit_util_id uuid;
+    -- Deterministic: scripts/e2e-local.sh references it directly as
+    -- E2E_ORG_A_SHARED_UNIT_ID.
+    v_unit_shared_id uuid := 'a0000000-0000-4000-a000-00000000005f';
     v_unit_b_id uuid;
 
     -- Tenants / leases (Org A). The isolation and exit-wizard fixtures use
@@ -95,6 +98,20 @@ declare
     v_lease_dep_zero_id uuid;
     v_tenant_util_id uuid;
     v_lease_util_id uuid;
+
+    -- Shared-unit exit fixture: one unit, two leases. The first is exited
+    -- through the full wizard; the second (DRAFT, dates starting strictly
+    -- after the first lease's own agreement_end_date so the overlap-
+    -- validation trigger permits both) is what should keep the unit from
+    -- being marked VACANT once the first lease's exit completes --
+    -- confirmed directly from kiraya.complete_tenant_exit()'s own body:
+    -- it only frees the unit if no OTHER lease with status ACTIVE/DRAFT
+    -- still references it, a pure status check independent of dates.
+    v_tenant_shared_exit_id uuid;
+    v_lease_shared_exit_id uuid := 'a0000000-0000-4000-a000-00000000006f';
+    v_tenant_shared_incoming_id uuid;
+    v_lease_shared_incoming_id uuid;
+    v_shared_exit_agreement_end date;
 
     -- Tenant / lease (Org B)
     v_tenant_b_id uuid;
@@ -244,6 +261,8 @@ begin
     values (gen_random_uuid(), v_org_a_id, v_property_a_id, 'DEP-ZERO', 'OCCUPIED') returning id into v_unit_dep_zero_id;
     insert into kiraya.units (id, organization_id, property_id, unit_code, status)
     values (gen_random_uuid(), v_org_a_id, v_property_a_id, 'UTIL', 'OCCUPIED') returning id into v_unit_util_id;
+    insert into kiraya.units (id, organization_id, property_id, unit_code, status)
+    values (v_unit_shared_id, v_org_a_id, v_property_a_id, 'SHARED', 'OCCUPIED');
 
     insert into kiraya.units (id, organization_id, property_id, unit_code, status)
     values (gen_random_uuid(), v_org_b_id, v_property_b_id, 'B-UNIT', 'OCCUPIED') returning id into v_unit_b_id;
@@ -264,6 +283,10 @@ begin
     values (gen_random_uuid(), v_org_a_id, 'LOCAL-TEN-DEP-ZERO', 'Local E2E Tenant — Zero Held Deposit', 'ACTIVE') returning id into v_tenant_dep_zero_id;
     insert into kiraya.tenants (id, organization_id, tenant_code, display_name, status)
     values (gen_random_uuid(), v_org_a_id, 'LOCAL-TEN-UTIL', 'Local E2E Tenant — Utilities', 'ACTIVE') returning id into v_tenant_util_id;
+    insert into kiraya.tenants (id, organization_id, tenant_code, display_name, status)
+    values (gen_random_uuid(), v_org_a_id, 'LOCAL-TEN-SHARED-EXIT', 'Local E2E Tenant — Shared Unit Exit', 'ACTIVE') returning id into v_tenant_shared_exit_id;
+    insert into kiraya.tenants (id, organization_id, tenant_code, display_name, status)
+    values (gen_random_uuid(), v_org_a_id, 'LOCAL-TEN-SHARED-INCOMING', 'Local E2E Tenant — Shared Unit Incoming', 'ACTIVE') returning id into v_tenant_shared_incoming_id;
 
     insert into kiraya.tenants (id, organization_id, tenant_code, display_name, status)
     values (gen_random_uuid(), v_org_b_id, 'LOCAL-TEN-B', 'Local E2E Tenant B', 'ACTIVE') returning id into v_tenant_b_id;
@@ -292,20 +315,36 @@ begin
     values (gen_random_uuid(), v_org_a_id, v_tenant_util_id, v_unit_util_id, 'LOCAL-LEASE-UTIL', 'ACTIVE', v_occupancy_start, v_occupancy_start, 'INR')
     returning id into v_lease_util_id;
 
+    -- Shared-unit pair: the exited lease needs a finite agreement_end_date
+    -- (an open-ended lease's overlap range has no upper bound at all, per
+    -- validate_lease_overlap()'s own "open-ended treated as extending
+    -- indefinitely" comment, which would make ANY second lease on the same
+    -- unit collide with it regardless of dates) so the incoming DRAFT
+    -- lease's occupancy can start strictly after it without the overlap
+    -- trigger rejecting the insert.
+    v_shared_exit_agreement_end := v_occupancy_start + interval '5 months';
+
+    insert into kiraya.leases (id, organization_id, tenant_id, unit_id, lease_code, status, agreement_start_date, occupancy_start_date, agreement_end_date, currency_code)
+    values (v_lease_shared_exit_id, v_org_a_id, v_tenant_shared_exit_id, v_unit_shared_id, 'LOCAL-LEASE-SHARED-EXIT', 'ACTIVE', v_occupancy_start, v_occupancy_start, v_shared_exit_agreement_end, 'INR');
+
+    insert into kiraya.leases (id, organization_id, tenant_id, unit_id, lease_code, status, agreement_start_date, occupancy_start_date, currency_code)
+    values (gen_random_uuid(), v_org_a_id, v_tenant_shared_incoming_id, v_unit_shared_id, 'LOCAL-LEASE-SHARED-INCOMING', 'DRAFT', v_shared_exit_agreement_end + 1, v_shared_exit_agreement_end + 1, 'INR')
+    returning id into v_lease_shared_incoming_id;
+
     insert into kiraya.leases (id, organization_id, tenant_id, unit_id, lease_code, status, agreement_start_date, occupancy_start_date, currency_code)
     values (gen_random_uuid(), v_org_b_id, v_tenant_b_id, v_unit_b_id, 'LOCAL-LEASE-B', 'ACTIVE', v_occupancy_start, v_occupancy_start, 'INR')
     returning id into v_lease_b_id;
 
     insert into kiraya.lease_rent_rules (organization_id, lease_id, rule_name, monthly_rent, effective_from)
     select v_org_a_id, id, 'Base rent', 10000, v_occupancy_start
-    from kiraya.leases where id in (v_lease_iso_id, v_lease_credit_id, v_lease_exit_id, v_lease_dep_existing_id, v_lease_dep_zero_id, v_lease_util_id);
+    from kiraya.leases where id in (v_lease_iso_id, v_lease_credit_id, v_lease_exit_id, v_lease_dep_existing_id, v_lease_dep_zero_id, v_lease_util_id, v_lease_shared_exit_id, v_lease_shared_incoming_id);
 
     insert into kiraya.lease_rent_rules (organization_id, lease_id, rule_name, monthly_rent, effective_from)
     values (v_org_b_id, v_lease_b_id, 'Base rent', 10000, v_occupancy_start);
 
     insert into kiraya.lease_billing_configs (organization_id, lease_id, billing_frequency, billing_day, proration_method, effective_from)
     select v_org_a_id, id, 'MONTHLY', 1, 'CALENDAR_DAYS', v_occupancy_start
-    from kiraya.leases where id in (v_lease_iso_id, v_lease_credit_id, v_lease_exit_id, v_lease_dep_existing_id, v_lease_dep_zero_id, v_lease_util_id);
+    from kiraya.leases where id in (v_lease_iso_id, v_lease_credit_id, v_lease_exit_id, v_lease_dep_existing_id, v_lease_dep_zero_id, v_lease_util_id, v_lease_shared_exit_id, v_lease_shared_incoming_id);
 
     insert into kiraya.lease_billing_configs (organization_id, lease_id, billing_frequency, billing_day, proration_method, effective_from)
     values (v_org_b_id, v_lease_b_id, 'MONTHLY', 1, 'CALENDAR_DAYS', v_occupancy_start);
@@ -362,6 +401,14 @@ begin
 
     insert into kiraya.security_deposit_transactions (organization_id, security_deposit_id, tenant_id, lease_id, transaction_type, description, transaction_date, amount, created_by)
     values (v_org_a_id, v_dep_existing_id, v_tenant_exit_id, v_lease_exit_id, 'RECEIPT', 'Local E2E seed: deposit receipt', current_date, 30000, v_admin_a_id);
+
+    -- Same reasoning for the shared-unit exit fixture's tenant.
+    insert into kiraya.security_deposits (id, organization_id, lease_id, tenant_id, deposit_reference, required_amount, status)
+    values (gen_random_uuid(), v_org_a_id, v_lease_shared_exit_id, v_tenant_shared_exit_id, 'LOCAL-DEP-SHARED-EXIT-001', 30000, 'PENDING')
+    returning id into v_dep_existing_id;
+
+    insert into kiraya.security_deposit_transactions (organization_id, security_deposit_id, tenant_id, lease_id, transaction_type, description, transaction_date, amount, created_by)
+    values (v_org_a_id, v_dep_existing_id, v_tenant_shared_exit_id, v_lease_shared_exit_id, 'RECEIPT', 'Local E2E seed: deposit receipt', current_date, 30000, v_admin_a_id);
 
     insert into kiraya.security_deposits (id, organization_id, lease_id, tenant_id, deposit_reference, required_amount, status)
     values (gen_random_uuid(), v_org_a_id, v_lease_dep_existing_id, v_tenant_dep_existing_id, 'LOCAL-DEP-EXISTING-001', 50000, 'PENDING')

@@ -123,6 +123,20 @@ async function withPageSession<T>(page: Page, fn: (client: OrgClient) => Promise
   return await fn(client);
 }
 
+/**
+ * The display name of the organization `page`'s current session belongs
+ * to. RLS scopes kiraya.organizations SELECT to an authenticated member's
+ * own organization(s), so this returns exactly the caller's own org name
+ * -- never another org's -- with no explicit organization_id filter
+ * needed or possible to get wrong.
+ */
+export async function findCurrentOrganizationName(page: Page): Promise<string | null> {
+  return withPageSession(page, async (client) => {
+    const { data } = await client.from("organizations").select("name").limit(1).maybeSingle();
+    return (data?.name as string | undefined) ?? null;
+  });
+}
+
 /** Any org's billing run id visible to `page`'s current session (oldest first, most stable). */
 export async function findOrgABillingRunId(page: Page): Promise<string | null> {
   return withPageSession(page, async (client) => {
