@@ -2,7 +2,6 @@ import {
   LayoutDashboard,
   Building2,
   Users,
-  Signature,
   Receipt,
   CreditCard,
   ScrollText,
@@ -39,10 +38,7 @@ export const orgNavGroups: NavGroupDef[] = [
   },
   {
     label: "People",
-    items: [
-      { href: "/app/tenants", label: "Tenants", icon: <Users size={ICON_SIZE} aria-hidden="true" /> },
-      { href: "/app/leases", label: "Leases", icon: <Signature size={ICON_SIZE} aria-hidden="true" /> },
-    ],
+    items: [{ href: "/app/tenants", label: "Tenants", icon: <Users size={ICON_SIZE} aria-hidden="true" /> }],
   },
   {
     label: "Money",

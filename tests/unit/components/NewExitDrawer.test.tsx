@@ -36,7 +36,7 @@ function makeLease(overrides: Partial<LeaseListItem>): LeaseListItem {
 }
 
 describe("NewExitDrawer", () => {
-  it("shows the eligible lease list once opened, with tenant/property/unit/lease context", async () => {
+  it("shows the eligible lease list once opened, with tenant/property/unit context — never the internal lease code", async () => {
     render(<NewExitDrawer eligibleLeases={[makeLease({})]} />);
 
     await userEvent.click(screen.getByRole("button", { name: "New Exit" }));
@@ -44,7 +44,7 @@ describe("NewExitDrawer", () => {
     expect(screen.getByText("Asha Rao")).toBeInTheDocument();
     expect(screen.getByText("Shanti Nivas")).toBeInTheDocument();
     expect(screen.getByText("A-101")).toBeInTheDocument();
-    expect(screen.getByText("LSE-01")).toBeInTheDocument();
+    expect(screen.queryByText("LSE-01")).not.toBeInTheDocument();
   });
 
   it("shows a 'no eligible tenants' empty state when nothing is eligible", async () => {
@@ -68,7 +68,7 @@ describe("NewExitDrawer", () => {
     await userEvent.click(screen.getByRole("button", { name: "New Exit" }));
     expect(screen.getByText("Vikram Singh")).toBeInTheDocument();
 
-    await userEvent.type(screen.getByLabelText("Search tenant, property, unit, or lease"), "Asha");
+    await userEvent.type(screen.getByLabelText("Search tenant, property, or unit"), "Asha");
 
     expect(screen.getByText("Asha Rao")).toBeInTheDocument();
     expect(screen.queryByText("Vikram Singh")).not.toBeInTheDocument();
@@ -78,7 +78,7 @@ describe("NewExitDrawer", () => {
     render(<NewExitDrawer eligibleLeases={[makeLease({})]} />);
 
     await userEvent.click(screen.getByRole("button", { name: "New Exit" }));
-    await userEvent.type(screen.getByLabelText("Search tenant, property, unit, or lease"), "no-such-tenant-zzz");
+    await userEvent.type(screen.getByLabelText("Search tenant, property, or unit"), "no-such-tenant-zzz");
 
     expect(screen.getByText("No matches")).toBeInTheDocument();
     expect(screen.queryByText("Asha Rao")).not.toBeInTheDocument();

@@ -40,12 +40,22 @@ const ENTRY_TYPE_LABEL: Record<string, string> = {
  * running_balance is read directly from kiraya.v_tenant_ledger — never
  * accumulated here.
  */
-export function LedgerTable({ entries, showTenantColumn = false }: { entries: LedgerEntryRow[]; showTenantColumn?: boolean }) {
+export function LedgerTable({
+  entries,
+  showTenantColumn = false,
+  unitByLeaseId,
+}: {
+  entries: LedgerEntryRow[];
+  showTenantColumn?: boolean;
+  /** P6.3-E: when given, shows which unit each entry belongs to (looked up by the entry's internal lease_id, never rendered itself) — for a Tenant Detail Ledger view that can span more than one unit. */
+  unitByLeaseId?: Record<string, string>;
+}) {
   return (
     <Table>
       <TableHead>
         <TableRow>
           <TableHeaderCell>Date</TableHeaderCell>
+          {unitByLeaseId ? <TableHeaderCell>Unit</TableHeaderCell> : null}
           <TableHeaderCell>Description</TableHeaderCell>
           {showTenantColumn ? <TableHeaderCell>Tenant</TableHeaderCell> : null}
           <TableHeaderCell>Type</TableHeaderCell>
@@ -63,6 +73,11 @@ export function LedgerTable({ entries, showTenantColumn = false }: { entries: Le
           return (
             <TableRow key={entry.ledger_entry_id}>
               <TableCell style={{ color: "var(--color-neutral-700)" }}>{entry.entry_date}</TableCell>
+              {unitByLeaseId ? (
+                <TableCell style={{ color: "var(--color-neutral-700)" }}>
+                  {(entry.lease_id && unitByLeaseId[entry.lease_id]) ?? "—"}
+                </TableCell>
+              ) : null}
               <TableCell>{entry.description ?? "—"}</TableCell>
               {showTenantColumn ? (
                 <TableCell>

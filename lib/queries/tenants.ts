@@ -33,6 +33,32 @@ export async function getTenantsForPicker(organizationId: string): Promise<Tenan
   return data ?? [];
 }
 
+/**
+ * Tenant picker for the Assign Tenant flow (P6.3-C) — active tenants only,
+ * org-scoped. Deliberately NOT filtered by whether the tenant already holds
+ * an active unit elsewhere: one tenant can hold multiple active occupancies
+ * simultaneously (the whole point of P6.3's Tenant-Unit model), so a tenant
+ * already occupying Unit 101 must still appear here when assigning Unit
+ * 102. The unit side of the uniqueness rule (one unit, one active tenant)
+ * is enforced separately, by kiraya.unit_is_assignable() and
+ * leases_unit_active_unique_idx — never by narrowing this list.
+ */
+export async function getActiveTenantsForPicker(organizationId: string): Promise<TenantPickerItem[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("tenants")
+    .select("id, tenant_code, display_name")
+    .eq("organization_id", organizationId)
+    .eq("status", "ACTIVE")
+    .order("display_name", { ascending: true });
+
+  if (error) {
+    throw new Error(`Failed to load tenants: ${error.message}`);
+  }
+
+  return data ?? [];
+}
+
 export interface GetTenantsParams {
   organizationId: string;
   search?: string;

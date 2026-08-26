@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireOrganizationWriteAccess } from "./shared";
 import { parseRentRuleFormData } from "@/lib/validation/rentRule";
 import { createRentRule } from "@/lib/mutations/rentRules";
+import { getLeaseUnitId } from "@/lib/queries/leases";
 import type { RentRuleRow } from "@/lib/queries/rentRules";
 
 export interface RentRuleActionState {
@@ -35,5 +36,9 @@ export async function createRentRuleAction(
   }
 
   revalidatePath(`/app/leases/${leaseId}`);
+  const unitId = await getLeaseUnitId(leaseId, access.organizationId);
+  if (unitId) {
+    revalidatePath(`/app/units/${unitId}`);
+  }
   return { success: true, rentRule: result.data };
 }

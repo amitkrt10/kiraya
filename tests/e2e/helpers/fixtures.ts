@@ -86,7 +86,7 @@ type OrgClient = ReturnType<typeof createClient>;
  * signs the lookup client out locally (this does not touch `page`'s own
  * session; `scope: "local"` only clears this ephemeral client's state).
  */
-async function withPageSession<T>(page: Page, fn: (client: OrgClient) => Promise<T>): Promise<T | null> {
+export async function withPageSession<T>(page: Page, fn: (client: OrgClient) => Promise<T>): Promise<T | null> {
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     return null;
   }

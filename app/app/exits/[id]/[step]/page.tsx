@@ -3,7 +3,7 @@ import { getRequestContext } from "@/lib/context/current";
 import { canWriteOrganization } from "@/lib/permissions/resolve";
 import { getLease } from "@/lib/queries/leases";
 import { getLeaseRentRules } from "@/lib/queries/rentRules";
-import { getSecurityDeposit, getSecurityDepositHeld, getSecurityDepositTransactions } from "@/lib/queries/securityDeposits";
+import { getSecurityDepositByLease, getSecurityDepositHeld, getSecurityDepositTransactions } from "@/lib/queries/securityDeposits";
 import { getActivePaymentMethodsForPicker } from "@/lib/queries/paymentMethods";
 import {
   getTenantExit,
@@ -96,7 +96,7 @@ export default async function TenantExitStepPage({ params }: { params: Promise<{
         );
       }
       case "deposit": {
-        const deposit = await getSecurityDeposit(exit!.tenant_id, organizationId);
+        const deposit = await getSecurityDepositByLease(exit!.lease_id, organizationId);
         const [held, transactions] = deposit
           ? await Promise.all([getSecurityDepositHeld(deposit.id), getSecurityDepositTransactions(deposit.id, organizationId)])
           : [0, []];
@@ -156,7 +156,7 @@ export default async function TenantExitStepPage({ params }: { params: Promise<{
         );
       }
       case "refund": {
-        const deposit = await getSecurityDeposit(exit!.tenant_id, organizationId);
+        const deposit = await getSecurityDepositByLease(exit!.lease_id, organizationId);
         const [held, depositRefunds, creditRefunds, paymentMethods] = await Promise.all([
           deposit ? getSecurityDepositHeld(deposit.id) : Promise.resolve(0),
           getDepositRefunds(settlement!.id, organizationId),
@@ -211,7 +211,6 @@ export default async function TenantExitStepPage({ params }: { params: Promise<{
             completedDepositRefunds={completedDepositRefunds}
             tenantName={tenantName}
             unitLabel={unitLabel}
-            leaseCode={lease!.lease_code}
             canWrite={canWrite}
             canComplete={canCompleteExit(exit, settlement)}
           />

@@ -68,7 +68,7 @@ export function GenerateBillingRunForm({ properties }: { properties: PropertyPic
             value={propertyId}
             onChange={(event) => setPropertyId(event.target.value)}
             error={fieldError("propertyId")}
-            hint="Leave blank to bill every active lease in the organization"
+            hint="Leave blank to bill every active occupancy in the organization"
           />
         </div>
       </div>
@@ -88,9 +88,9 @@ export function GenerateBillingRunForm({ properties }: { properties: PropertyPic
           {preview?.error ? <span style={{ fontSize: 13, color: "var(--color-accent-700)" }}>{preview.error}</span> : null}
           {preview?.count !== undefined ? (
             <span style={{ fontSize: 13, color: "var(--color-neutral-700)" }}>
-              Estimated — <strong>{preview.count}</strong> active {preview.count === 1 ? "lease" : "leases"} will be attempted.
-              Leases without an active billing configuration, or already billed for this period, will be skipped and listed as
-              failures on the run.
+              Estimated — <strong>{preview.count}</strong> active {preview.count === 1 ? "occupancy" : "occupancies"} will be
+              attempted. Occupancies without an active billing configuration, or already billed for this period, will be
+              skipped and listed as failures on the run.
             </span>
           ) : (
             <span style={{ fontSize: 13, color: "var(--color-neutral-700)" }}>

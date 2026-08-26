@@ -13,6 +13,29 @@ export interface LeaseListItem extends LeaseRow {
   } | null;
 }
 
+/**
+ * Minimal lookup used only to revalidate the right pages after a mutation
+ * on a lease's rent rule/billing config — those are now also managed from
+ * Unit Detail (P6.3-D), not just /app/leases/[id], so callers need the
+ * unit id to revalidate both.
+ */
+export async function getLeaseUnitId(leaseId: string, organizationId: string): Promise<string | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("leases")
+    .select("unit_id")
+    .eq("id", leaseId)
+    .eq("organization_id", organizationId)
+    .maybeSingle();
+
+  if (error) {
+    if (error.code === "22P02") return null;
+    throw new Error(`Failed to load lease: ${error.message}`);
+  }
+
+  return data?.unit_id ?? null;
+}
+
 export interface GetLeasesParams {
   organizationId: string;
   search?: string;
@@ -145,6 +168,29 @@ export async function getUnitCurrentLease(
   }
 
   return data;
+}
+
+/**
+ * P6.3-J: every lease (occupancy) this unit has ever had — active,
+ * ended, draft, or cancelled — used to build the "Past Occupancies"
+ * section on Unit Detail. Unlike getUnitCurrentLease(), this has no
+ * status filter: it's the query that actually lets a unit's occupancy
+ * history be listed, which nothing in the codebase did before this.
+ */
+export async function getUnitLeases(unitId: string, organizationId: string): Promise<LeaseListItem[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("leases")
+    .select(LEASE_LIST_SELECT)
+    .eq("unit_id", unitId)
+    .eq("organization_id", organizationId)
+    .order("occupancy_start_date", { ascending: false });
+
+  if (error) {
+    throw new Error(`Failed to load unit leases: ${error.message}`);
+  }
+
+  return data ?? [];
 }
 
 /**

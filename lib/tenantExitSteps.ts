@@ -2,7 +2,7 @@ import type { TenantExitRow, ExitSettlementRow } from "@/lib/queries/tenantExits
 
 export const EXIT_STEPS = [
   { n: 1, slug: "initiation", label: "Exit Initiation" },
-  { n: 2, slug: "review", label: "Tenant / Lease Review" },
+  { n: 2, slug: "review", label: "Tenant / Unit Review" },
   { n: 3, slug: "dues", label: "Outstanding Dues" },
   { n: 4, slug: "deposit", label: "Deposit Review" },
   { n: 5, slug: "adjustments", label: "Adjustments" },

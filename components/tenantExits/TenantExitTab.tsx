@@ -21,8 +21,8 @@ export function TenantExitTab({
       return (
         <EmptyState
           icon={DoorOpen}
-          title="No active lease"
-          description="This tenant has no active lease, so a tenant exit cannot be started."
+          title="No active occupancy"
+          description="This tenant has no active occupancy here, so an exit cannot be started."
         />
       );
     }

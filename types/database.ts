@@ -7,6 +7,11 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "12.2.12 (cd3cf9e)"
+  }
   kiraya: {
     Tables: {
       audit_logs: {
@@ -563,6 +568,13 @@ export type Database = {
             foreignKeyName: "bills_unit_id_fkey"
             columns: ["unit_id"]
             isOneToOne: false
+            referencedRelation: "v_assignable_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bills_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
             referencedRelation: "v_exit_tenant_dues"
             referencedColumns: ["unit_id"]
           },
@@ -1023,6 +1035,13 @@ export type Database = {
             columns: ["unit_id"]
             isOneToOne: false
             referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "v_assignable_units"
             referencedColumns: ["id"]
           },
           {
@@ -1907,6 +1926,13 @@ export type Database = {
             foreignKeyName: "leases_unit_id_fkey"
             columns: ["unit_id"]
             isOneToOne: false
+            referencedRelation: "v_assignable_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leases_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
             referencedRelation: "v_exit_tenant_dues"
             referencedColumns: ["unit_id"]
           },
@@ -2531,6 +2557,13 @@ export type Database = {
             columns: ["unit_id"]
             isOneToOne: false
             referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meters_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "v_assignable_units"
             referencedColumns: ["id"]
           },
           {
@@ -3798,6 +3831,88 @@ export type Database = {
           },
         ]
       }
+      tenant_contacts: {
+        Row: {
+          address: string | null
+          contact_type: Database["kiraya"]["Enums"]["tenant_contact_type"]
+          created_at: string
+          id: string
+          name: string | null
+          organization_id: string
+          phone: string | null
+          sort_order: number
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          contact_type: Database["kiraya"]["Enums"]["tenant_contact_type"]
+          created_at?: string
+          id?: string
+          name?: string | null
+          organization_id: string
+          phone?: string | null
+          sort_order: number
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          contact_type?: Database["kiraya"]["Enums"]["tenant_contact_type"]
+          created_at?: string
+          id?: string
+          name?: string | null
+          organization_id?: string
+          phone?: string | null
+          sort_order?: number
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_contacts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_contacts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_contacts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_exit_tenant_dues"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "tenant_contacts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_lease_expiry_alerts"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "tenant_contacts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_milestones"
+            referencedColumns: ["tenant_id"]
+          },
+          {
+            foreignKeyName: "tenant_contacts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_outstanding"
+            referencedColumns: ["tenant_id"]
+          },
+        ]
+      }
       tenant_credit_refunds: {
         Row: {
           amount: number
@@ -4179,6 +4294,7 @@ export type Database = {
       }
       tenants: {
         Row: {
+          aadhaar_number: string | null
           address_line_1: string | null
           address_line_2: string | null
           alternate_phone: string | null
@@ -4194,11 +4310,15 @@ export type Database = {
           id: string
           legal_name: string | null
           locality: string | null
+          member_count: number | null
           metadata: Json
           notes: string | null
           organization_id: string
+          other_identity_document_number: string | null
+          pan_number: string | null
           phone: string | null
           postal_code: string | null
+          religion: Database["kiraya"]["Enums"]["tenant_religion"] | null
           state: string | null
           status: Database["kiraya"]["Enums"]["tenant_status"]
           tax_identifier: string | null
@@ -4207,6 +4327,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          aadhaar_number?: string | null
           address_line_1?: string | null
           address_line_2?: string | null
           alternate_phone?: string | null
@@ -4222,11 +4343,15 @@ export type Database = {
           id?: string
           legal_name?: string | null
           locality?: string | null
+          member_count?: number | null
           metadata?: Json
           notes?: string | null
           organization_id: string
+          other_identity_document_number?: string | null
+          pan_number?: string | null
           phone?: string | null
           postal_code?: string | null
+          religion?: Database["kiraya"]["Enums"]["tenant_religion"] | null
           state?: string | null
           status?: Database["kiraya"]["Enums"]["tenant_status"]
           tax_identifier?: string | null
@@ -4235,6 +4360,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          aadhaar_number?: string | null
           address_line_1?: string | null
           address_line_2?: string | null
           alternate_phone?: string | null
@@ -4250,11 +4376,15 @@ export type Database = {
           id?: string
           legal_name?: string | null
           locality?: string | null
+          member_count?: number | null
           metadata?: Json
           notes?: string | null
           organization_id?: string
+          other_identity_document_number?: string | null
+          pan_number?: string | null
           phone?: string | null
           postal_code?: string | null
+          religion?: Database["kiraya"]["Enums"]["tenant_religion"] | null
           state?: string | null
           status?: Database["kiraya"]["Enums"]["tenant_status"]
           tax_identifier?: string | null
@@ -4655,6 +4785,13 @@ export type Database = {
             foreignKeyName: "utility_configurations_unit_id_fkey"
             columns: ["unit_id"]
             isOneToOne: false
+            referencedRelation: "v_assignable_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "utility_configurations_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
             referencedRelation: "v_exit_tenant_dues"
             referencedColumns: ["unit_id"]
           },
@@ -4900,6 +5037,145 @@ export type Database = {
       }
     }
     Views: {
+      v_assignable_units: {
+        Row: {
+          area: number | null
+          area_unit: string | null
+          bathrooms: number | null
+          bedrooms: number | null
+          created_at: string | null
+          description: string | null
+          floor_number: number | null
+          id: string | null
+          metadata: Json | null
+          organization_id: string | null
+          property_id: string | null
+          status: Database["kiraya"]["Enums"]["unit_status"] | null
+          unit_code: string | null
+          unit_type_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          area?: number | null
+          area_unit?: string | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          created_at?: string | null
+          description?: string | null
+          floor_number?: number | null
+          id?: string | null
+          metadata?: Json | null
+          organization_id?: string | null
+          property_id?: string | null
+          status?: Database["kiraya"]["Enums"]["unit_status"] | null
+          unit_code?: string | null
+          unit_type_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          area?: number | null
+          area_unit?: string | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          created_at?: string | null
+          description?: string | null
+          floor_number?: number | null
+          id?: string | null
+          metadata?: Json | null
+          organization_id?: string | null
+          property_id?: string | null
+          status?: Database["kiraya"]["Enums"]["unit_status"] | null
+          unit_code?: string | null
+          unit_type_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "units_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "units_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "units_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "v_exit_tenant_dues"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "units_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "v_exit_tenant_statement"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "units_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "v_lease_expiry_alerts"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "units_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "v_meter_consumption_trend"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "units_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "v_owner_portfolio"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "units_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "v_property_occupancy"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "units_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_bill_summary"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "units_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_milestones"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "units_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "v_tenant_outstanding"
+            referencedColumns: ["property_id"]
+          },
+          {
+            foreignKeyName: "units_unit_type_id_fkey"
+            columns: ["unit_type_id"]
+            isOneToOne: false
+            referencedRelation: "unit_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_collection_by_payment_method: {
         Row: {
           collected_amount: number | null
@@ -5158,6 +5434,13 @@ export type Database = {
             columns: ["unit_id"]
             isOneToOne: false
             referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meters_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "v_assignable_units"
             referencedColumns: ["id"]
           },
           {
@@ -5642,6 +5925,13 @@ export type Database = {
             foreignKeyName: "leases_unit_id_fkey"
             columns: ["unit_id"]
             isOneToOne: false
+            referencedRelation: "v_assignable_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leases_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
             referencedRelation: "v_exit_tenant_dues"
             referencedColumns: ["unit_id"]
           },
@@ -5794,6 +6084,53 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "tenant_exits"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      create_tenant_unit_assignment: {
+        Args: {
+          p_bill_in_advance?: boolean
+          p_billing_day?: number
+          p_billing_frequency?: Database["kiraya"]["Enums"]["billing_frequency"]
+          p_deposit_notes?: string
+          p_deposit_reference?: string
+          p_deposit_required_amount?: number
+          p_due_days_after_bill?: number
+          p_final_bill_prorate?: boolean
+          p_first_bill_prorate?: boolean
+          p_monthly_rent: number
+          p_occupancy_notes?: string
+          p_occupancy_start_date: string
+          p_organization_id: string
+          p_proration_method?: Database["kiraya"]["Enums"]["proration_method"]
+          p_rent_rule_name: string
+          p_tenant_id: string
+          p_unit_id: string
+        }
+        Returns: {
+          actual_end_date: string | null
+          agreement_end_date: string | null
+          agreement_start_date: string
+          created_at: string
+          currency_code: string
+          id: string
+          lease_code: string
+          metadata: Json
+          move_in_date: string | null
+          move_out_date: string | null
+          notes: string | null
+          notice_date: string | null
+          occupancy_start_date: string
+          organization_id: string
+          status: Database["kiraya"]["Enums"]["lease_status"]
+          tenant_id: string
+          unit_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "leases"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -6056,6 +6393,7 @@ export type Database = {
         Args: { p_security_deposit_id: string }
         Returns: undefined
       }
+      unit_is_assignable: { Args: { p_unit_id: string }; Returns: boolean }
       validate_property_ownership_complete: {
         Args: { p_as_of_date?: string; p_property_id: string }
         Returns: boolean
@@ -6164,8 +6502,26 @@ export type Database = {
       reading_source: "MANUAL" | "IMPORT" | "API" | "OTHER"
       role_scope: "PLATFORM" | "ORGANIZATION"
       settlement_status: "DRAFT" | "FINALIZED" | "SETTLED" | "CANCELLED"
+      tenant_contact_type: "EMERGENCY" | "LOCAL_REFERENCE"
+      tenant_religion:
+        | "HINDU"
+        | "MUSLIM"
+        | "CHRISTIAN"
+        | "SIKH"
+        | "BUDDHIST"
+        | "JAIN"
+        | "PARSI_ZOROASTRIAN"
+        | "JEWISH"
+        | "OTHER"
+        | "PREFER_NOT_TO_SAY"
       tenant_status: "ACTIVE" | "INACTIVE" | "ARCHIVED"
-      tenant_type: "INDIVIDUAL" | "COMPANY" | "OTHER"
+      tenant_type:
+        | "INDIVIDUAL"
+        | "COMPANY"
+        | "OTHER"
+        | "SCHOOL"
+        | "INSTITUTE"
+        | "FAMILY"
       unit_status: "VACANT" | "OCCUPIED" | "MAINTENANCE" | "UNAVAILABLE"
     }
     CompositeTypes: {
@@ -6362,10 +6718,29 @@ export const Constants = {
       reading_source: ["MANUAL", "IMPORT", "API", "OTHER"],
       role_scope: ["PLATFORM", "ORGANIZATION"],
       settlement_status: ["DRAFT", "FINALIZED", "SETTLED", "CANCELLED"],
+      tenant_contact_type: ["EMERGENCY", "LOCAL_REFERENCE"],
+      tenant_religion: [
+        "HINDU",
+        "MUSLIM",
+        "CHRISTIAN",
+        "SIKH",
+        "BUDDHIST",
+        "JAIN",
+        "PARSI_ZOROASTRIAN",
+        "JEWISH",
+        "OTHER",
+        "PREFER_NOT_TO_SAY",
+      ],
       tenant_status: ["ACTIVE", "INACTIVE", "ARCHIVED"],
-      tenant_type: ["INDIVIDUAL", "COMPANY", "OTHER"],
+      tenant_type: [
+        "INDIVIDUAL",
+        "COMPANY",
+        "OTHER",
+        "SCHOOL",
+        "INSTITUTE",
+        "FAMILY",
+      ],
       unit_status: ["VACANT", "OCCUPIED", "MAINTENANCE", "UNAVAILABLE"],
     },
   },
 } as const
-

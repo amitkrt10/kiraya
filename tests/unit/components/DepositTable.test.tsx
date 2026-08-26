@@ -22,7 +22,11 @@ function makeDeposit(overrides: Partial<SecurityDepositListItem>): SecurityDepos
     created_at: "2026-01-05T00:00:00Z",
     updated_at: "2026-01-05T00:00:00Z",
     tenants: { display_name: "Asha Rao", tenant_code: "TEN-01" },
-    leases: { lease_code: "LSE-01", units: { unit_code: "A-101", properties: { id: "prop-1", name: "Shanti Nivas", property_code: "SH-01" } } },
+    leases: {
+      lease_code: "LSE-01",
+      unit_id: "unit-1",
+      units: { unit_code: "A-101", properties: { id: "prop-1", name: "Shanti Nivas", property_code: "SH-01" } },
+    },
     held: 16000,
     ...overrides,
   };
@@ -32,8 +36,13 @@ describe("DepositTable", () => {
   it("renders a row per deposit with reference, tenant, property, unit, amounts, date, and status", () => {
     render(<DepositTable deposits={[makeDeposit({})]} />);
 
-    expect(screen.getByRole("link", { name: "DEP-01" })).toHaveAttribute("href", "/app/tenants/tenant-1?tab=deposit");
-    expect(screen.getByRole("link", { name: "Asha Rao" })).toHaveAttribute("href", "/app/tenants/tenant-1?tab=deposit");
+    // P6.3-J: the deposit reference links to this deposit's exact
+    // occupancy (never the bare unit page, and never Tenant Detail's
+    // ?tab=deposit) — both of those can resolve to a *different*
+    // deposit/occupancy than the one clicked here.
+    expect(screen.getByRole("link", { name: "DEP-01" })).toHaveAttribute("href", "/app/units/unit-1/occupancies/lease-1");
+    // The tenant link is deliberately generic (no ?tab=deposit) for the same reason.
+    expect(screen.getByRole("link", { name: "Asha Rao" })).toHaveAttribute("href", "/app/tenants/tenant-1");
     expect(screen.getByText("Shanti Nivas")).toBeInTheDocument();
     expect(screen.getByText("A-101")).toBeInTheDocument();
     expect(screen.getByText("2026-01-05")).toBeInTheDocument();

@@ -51,6 +51,7 @@ export async function getRecentPayments(organizationId: string): Promise<Payment
 
 export interface UpcomingLeaseExpiry {
   leaseId: string;
+  unitId: string;
   tenantName: string;
   unitLabel: string;
   daysUntilExpiry: number;
@@ -77,11 +78,20 @@ export async function getUpcomingLeaseExpiries(organizationId: string): Promise<
 
   return (data ?? [])
     .filter(
-      (row): row is typeof row & { lease_id: string; tenant_name: string; unit_code: string; days_until_expiry: number; alert_status: string } =>
-        Boolean(row.lease_id && row.tenant_name && row.unit_code && row.days_until_expiry !== null && row.alert_status),
+      (
+        row,
+      ): row is typeof row & {
+        lease_id: string;
+        unit_id: string;
+        tenant_name: string;
+        unit_code: string;
+        days_until_expiry: number;
+        alert_status: string;
+      } => Boolean(row.lease_id && row.unit_id && row.tenant_name && row.unit_code && row.days_until_expiry !== null && row.alert_status),
     )
     .map((row) => ({
       leaseId: row.lease_id,
+      unitId: row.unit_id,
       tenantName: row.tenant_name,
       unitLabel: row.property_name ? `${row.property_name} · ${row.unit_code}` : row.unit_code,
       daysUntilExpiry: row.days_until_expiry,

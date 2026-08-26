@@ -1,43 +1,12 @@
-import { getRequestContext } from "@/lib/context/current";
-import { canWriteOrganization } from "@/lib/permissions/resolve";
-import { getTenantsForPicker } from "@/lib/queries/tenants";
-import { getPropertiesForPicker } from "@/lib/queries/properties";
-import { getUnitsForPicker } from "@/lib/queries/units";
-import { LeaseCreateForm } from "@/components/leases/LeaseCreateForm";
-import { PermissionDenied } from "@/components/ui/ErrorState";
-import { Card } from "@/components/ui/Card";
+import { redirect } from "next/navigation";
 
-export default async function NewLeasePage({
-  searchParams,
-}: {
-  searchParams: Promise<{ unitId?: string }>;
-}) {
-  const params = await searchParams;
-  const context = await getRequestContext();
-  if (!context?.organization) {
-    return null;
-  }
-
-  const organizationId = context.organization.organizationId;
-  const canWrite = await canWriteOrganization(organizationId);
-  if (!canWrite) {
-    return <PermissionDenied description="You don't have permission to add leases in this organization." />;
-  }
-
-  const [tenants, properties, units] = await Promise.all([
-    getTenantsForPicker(organizationId),
-    getPropertiesForPicker(organizationId),
-    getUnitsForPicker(organizationId),
-  ]);
-
-  return (
-    <Card>
-      <LeaseCreateForm
-        tenants={tenants}
-        properties={properties}
-        units={units}
-        preselectedUnitId={params.unitId}
-      />
-    </Card>
-  );
+/**
+ * P6.3-E: retired — creating an occupancy now starts from Unit Detail's
+ * "Assign Tenant" drawer (P6.3-C), which calls the same atomic RPC this
+ * form's submit ultimately relied on. No in-app link has pointed here
+ * since P6.3-C shipped; this redirect just closes the last direct-URL
+ * path. LeaseCreateForm itself is untouched.
+ */
+export default function NewLeasePage() {
+  redirect("/app/units");
 }

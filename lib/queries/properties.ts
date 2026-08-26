@@ -206,28 +206,86 @@ export interface PropertyUnitCounts {
 }
 
 /**
- * Computed directly from kiraya.units rather than kiraya.v_property_occupancy,
- * which filters `where p.status = 'ACTIVE'` and would silently return zero
- * rows (not zero counts) for an INACTIVE/ARCHIVED property. Same
- * occupied/total*100 formula as that view for consistency.
+ * Occupied/Vacant/Occupancy% are derived from the same authoritative
+ * ACTIVE-lease check as kiraya.unit_is_assignable() (P6.3-B) — never
+ * units.status, which P6.3-A found desynced from real occupancy on 36/71
+ * hosted units. MAINTENANCE/UNAVAILABLE keep coming from units.status
+ * since that's their real, status-driven meaning (independent of
+ * occupancy, per unit_is_assignable()'s own definition) — deliberately
+ * NOT reimplemented as a second predicate, to avoid the two drifting.
+ *
+ * Not kiraya.v_property_occupancy: that view has the exact same
+ * units.status-based bug this fixes, and separately filters
+ * `where p.status = 'ACTIVE'`, silently returning zero rows (not zero
+ * counts) for an INACTIVE/ARCHIVED property.
  */
-export async function getPropertyUnitCounts(propertyId: string): Promise<PropertyUnitCounts> {
+export async function getPropertyUnitCounts(propertyId: string, organizationId: string): Promise<PropertyUnitCounts> {
   const supabase = await createClient();
-  const { data, error } = await supabase
+  const { data: units, error: unitsError } = await supabase
     .from("units")
-    .select("status")
-    .eq("property_id", propertyId);
+    .select("id, status")
+    .eq("property_id", propertyId)
+    .eq("organization_id", organizationId);
 
-  if (error) {
-    throw new Error(`Failed to load unit counts: ${error.message}`);
+  if (unitsError) {
+    throw new Error(`Failed to load unit counts: ${unitsError.message}`);
   }
 
-  const rows = data ?? [];
-  const totalUnits = rows.length;
-  const occupiedUnits = rows.filter((row) => row.status === "OCCUPIED").length;
-  const vacantUnits = rows.filter((row) => row.status === "VACANT").length;
-  const maintenanceUnits = rows.filter((row) => row.status === "MAINTENANCE").length;
-  const unavailableUnits = rows.filter((row) => row.status === "UNAVAILABLE").length;
+  return computeUnitCounts(units ?? [], organizationId, supabase);
+}
+
+/**
+ * Org-wide equivalent of getPropertyUnitCounts() — same authoritative
+ * ACTIVE-lease-derived definition, just without the property_id filter.
+ * Backs the main Dashboard's Occupancy/vacant-unit KPIs (P6.3-E), which
+ * previously read kiraya.v_organization_dashboard's own
+ * occupied_unit_count/vacant_unit_count/occupancy_percentage — those are
+ * units.status-derived (same bug P6.3-D fixed at the property level) and
+ * are no longer used for this KPI.
+ */
+export async function getOrganizationUnitCounts(organizationId: string): Promise<PropertyUnitCounts> {
+  const supabase = await createClient();
+  const { data: units, error: unitsError } = await supabase
+    .from("units")
+    .select("id, status")
+    .eq("organization_id", organizationId);
+
+  if (unitsError) {
+    throw new Error(`Failed to load unit counts: ${unitsError.message}`);
+  }
+
+  return computeUnitCounts(units ?? [], organizationId, supabase);
+}
+
+async function computeUnitCounts(
+  unitRows: { id: string; status: string }[],
+  organizationId: string,
+  supabase: Awaited<ReturnType<typeof createClient>>,
+): Promise<PropertyUnitCounts> {
+  const totalUnits = unitRows.length;
+  const unitIds = unitRows.map((row) => row.id);
+
+  const { data: activeLeases, error: leasesError } =
+    unitIds.length === 0
+      ? { data: [] as { unit_id: string }[], error: null }
+      : await supabase
+          .from("leases")
+          .select("unit_id")
+          .eq("organization_id", organizationId)
+          .eq("status", "ACTIVE")
+          .in("unit_id", unitIds);
+
+  if (leasesError) {
+    throw new Error(`Failed to load unit counts: ${leasesError.message}`);
+  }
+
+  const occupiedUnitIds = new Set((activeLeases ?? []).map((lease) => lease.unit_id));
+  const occupiedUnits = unitRows.filter((row) => occupiedUnitIds.has(row.id)).length;
+  const vacantUnits = unitRows.filter(
+    (row) => row.status !== "MAINTENANCE" && row.status !== "UNAVAILABLE" && !occupiedUnitIds.has(row.id),
+  ).length;
+  const maintenanceUnits = unitRows.filter((row) => row.status === "MAINTENANCE").length;
+  const unavailableUnits = unitRows.filter((row) => row.status === "UNAVAILABLE").length;
 
   return {
     totalUnits,

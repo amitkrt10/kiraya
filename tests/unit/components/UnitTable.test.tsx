@@ -104,6 +104,84 @@ describe("UnitTable", () => {
     expect(screen.getByRole("link", { name: "Asha Rao" })).toHaveAttribute("href", "/app/tenants/tenant-1");
   });
 
+  it("P6.3-H: shows Occupied (never Vacant) when a current lease exists, even though unit.status is still the raw VACANT default", () => {
+    render(
+      <UnitTable
+        propertyId="prop-1"
+        units={[makeUnit({ status: "VACANT" })]}
+        unitTypes={[]}
+        currentLeases={{
+          "unit-1": {
+            id: "lease-1",
+            organization_id: "org-1",
+            lease_code: "LSE-1",
+            tenant_id: "tenant-1",
+            unit_id: "unit-1",
+            status: "ACTIVE",
+            agreement_start_date: "2026-01-01",
+            agreement_end_date: null,
+            occupancy_start_date: "2026-01-01",
+            actual_end_date: null,
+            notice_date: null,
+            move_in_date: null,
+            move_out_date: null,
+            currency_code: "INR",
+            notes: null,
+            metadata: {},
+            created_at: "2026-01-01T00:00:00Z",
+            updated_at: "2026-01-01T00:00:00Z",
+            tenants: { display_name: "Asha Rao", tenant_code: "TEN-1" },
+            units: null,
+          },
+        }}
+        canWrite={false}
+        suggestedUnitCode="TST-001"
+      />,
+    );
+
+    expect(screen.getByText("Occupied")).toBeInTheDocument();
+    expect(screen.queryByText("Vacant")).not.toBeInTheDocument();
+  });
+
+  it("P6.3-H: still shows Maintenance for a unit under maintenance even with a current lease present", () => {
+    render(
+      <UnitTable
+        propertyId="prop-1"
+        units={[makeUnit({ status: "MAINTENANCE" })]}
+        unitTypes={[]}
+        currentLeases={{
+          "unit-1": {
+            id: "lease-1",
+            organization_id: "org-1",
+            lease_code: "LSE-1",
+            tenant_id: "tenant-1",
+            unit_id: "unit-1",
+            status: "ACTIVE",
+            agreement_start_date: "2026-01-01",
+            agreement_end_date: null,
+            occupancy_start_date: "2026-01-01",
+            actual_end_date: null,
+            notice_date: null,
+            move_in_date: null,
+            move_out_date: null,
+            currency_code: "INR",
+            notes: null,
+            metadata: {},
+            created_at: "2026-01-01T00:00:00Z",
+            updated_at: "2026-01-01T00:00:00Z",
+            tenants: { display_name: "Asha Rao", tenant_code: "TEN-1" },
+            units: null,
+          },
+        }}
+        canWrite={false}
+        suggestedUnitCode="TST-001"
+      />,
+    );
+
+    expect(screen.getByText("Maintenance")).toBeInTheDocument();
+    expect(screen.queryByText("Occupied")).not.toBeInTheDocument();
+  });
+
   it("does not show the add-unit action when the viewer can't write", () => {
     render(
       <UnitTable

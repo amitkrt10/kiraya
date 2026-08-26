@@ -59,7 +59,7 @@ export function Step1Initiation({ lease }: { lease: LeaseDetail }) {
 
         <div style={{ display: "flex", gap: 10 }}>
           <Button variant="primary" type="submit" loading={isPending}>
-            Continue to Tenant / Lease Review
+            Continue to Tenant / Unit Review
           </Button>
         </div>
       </form>

@@ -23,7 +23,7 @@ export function LeaseExpiriesPanel({ expiries }: { expiries: UpcomingLeaseExpiry
       {expiries.map((expiry) => {
         const urgent = URGENT_STATUSES.has(expiry.alertStatus);
         return (
-          <Link key={expiry.leaseId} href={`/app/leases/${expiry.leaseId}`} className={styles.item}>
+          <Link key={expiry.leaseId} href={`/app/units/${expiry.unitId}`} className={styles.item}>
             <div>
               <div className={styles.tenant}>{expiry.tenantName}</div>
               <div className={styles.unit}>{expiry.unitLabel}</div>

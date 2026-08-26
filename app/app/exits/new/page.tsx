@@ -37,7 +37,7 @@ export default async function NewTenantExitPage({ searchParams }: { searchParams
     return (
       <div style={{ maxWidth: 640, padding: 32 }}>
         <div style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 18, marginBottom: 10 }}>
-          An exit is already in progress for this lease
+          An exit is already in progress for this occupancy
         </div>
         <p style={{ fontSize: 13, color: "var(--color-neutral-700)", marginBottom: 16 }}>
           {existingExit.exit_reference} is already {existingExit.status === "INITIATED" ? "initiated" : "pending settlement"}.

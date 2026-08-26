@@ -185,6 +185,11 @@ describe("translateDatabaseError", () => {
     expect(translateDatabaseError(error)).toBe("This unit is already leased for the selected dates");
   });
 
+  it("P6.3-E: rewrites kiraya.validate_lease_overlap()'s own authored message so it never says 'lease' on Tenant/Unit-facing screens (e.g. Assign Tenant)", () => {
+    const error = fakeError({ code: "23P01", message: "Lease occupancy period overlaps another lease for this unit." });
+    expect(translateDatabaseError(error)).toBe("This unit already has an overlapping occupancy for this period.");
+  });
+
   it("falls back to a generic overlap message when the exclusion violation text isn't clean", () => {
     const error = fakeError({
       code: "23P01",
@@ -236,12 +241,12 @@ describe("translateDatabaseError", () => {
     expect(translateDatabaseError(error)).toBe("That exit reference already exists — try again.");
   });
 
-  it("translates an already-in-progress exit for a lease into a plain-language message", () => {
+  it("translates an already-in-progress exit for an occupancy into a plain-language message", () => {
     const error = fakeError({
       code: "23505",
       message: 'duplicate key value violates unique constraint "tenant_exits_active_lease_unique_idx"',
     });
-    expect(translateDatabaseError(error)).toBe("This lease already has an exit in progress.");
+    expect(translateDatabaseError(error)).toBe("This occupancy already has an exit in progress.");
   });
 
   it("passes through validate_security_deposit_transaction()'s not-found message for a foreign key violation", () => {
@@ -313,6 +318,16 @@ describe("translateDatabaseError", () => {
     expect(translateDatabaseError(error)).toBe(
       "An active configuration for this utility already covers an overlapping period for this property or unit.",
     );
+  });
+
+  it("P6.3-H: translates the rent rule overlap exclusion violation into a plain-language message, not the generic leases fallback", () => {
+    const error = fakeError({
+      code: "23P01",
+      message:
+        'conflicting key value violates exclusion constraint "lease_rent_rules_no_active_overlap" DETAIL:  Key (lease_id, daterange(effective_from, effective_to, \'[]\'::text))=(...) conflicts with existing key.',
+    });
+    expect(translateDatabaseError(error)).toBe("An overlapping rent rule already exists for this period.");
+    expect(translateDatabaseError(error)).not.toContain("lease");
   });
 
   it("passes through validate_utility_configuration_organization()'s clean not-found message for a foreign key violation", () => {

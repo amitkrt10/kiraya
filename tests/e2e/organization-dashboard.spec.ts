@@ -89,7 +89,7 @@ test.describe("Organization Dashboard", () => {
     await expect(main.getByText("Collection Performance")).toBeVisible();
     await expect(main.getByText("Recent Payments")).toBeVisible();
     await expect(main.getByText("Pending Actions")).toBeVisible();
-    await expect(main.getByText("Lease Expiries")).toBeVisible();
+    await expect(main.getByText("Occupancy Ending Soon")).toBeVisible();
     await expect(main.getByText("Billing Status — This Cycle")).toBeVisible();
 
     // Billing Status strip's six tiles.

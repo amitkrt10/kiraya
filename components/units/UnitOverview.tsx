@@ -1,4 +1,5 @@
 import { DetailRows } from "@/components/ui/DetailRows";
+import { deriveUnitOccupancyStatus } from "@/lib/utils/unitStatus";
 import type { UnitDetail } from "@/lib/queries/units";
 
 const STATUS_LABELS: Record<UnitDetail["status"], string> = {
@@ -8,12 +9,12 @@ const STATUS_LABELS: Record<UnitDetail["status"], string> = {
   UNAVAILABLE: "Unavailable",
 };
 
-export function UnitOverview({ unit }: { unit: UnitDetail }) {
+export function UnitOverview({ unit, isOccupied }: { unit: UnitDetail; isOccupied: boolean }) {
   const rows = [
     { label: "Unit Code", value: unit.unit_code },
     { label: "Property", value: unit.properties?.name ?? "" },
     { label: "Unit Type", value: unit.unit_types?.name ?? "" },
-    { label: "Status", value: STATUS_LABELS[unit.status] },
+    { label: "Status", value: STATUS_LABELS[deriveUnitOccupancyStatus(unit.status, isOccupied)] },
     { label: "Floor", value: unit.floor_number != null ? String(unit.floor_number) : "" },
     {
       label: "Area",

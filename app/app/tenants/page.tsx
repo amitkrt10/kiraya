@@ -72,7 +72,7 @@ export default async function TenantsPage({
           description={
             hasFilters
               ? "Try adjusting your search or filters."
-              : "Add your first tenant to start creating leases."
+              : "Add your first tenant to start assigning them to units."
           }
           action={
             !hasFilters && canWrite ? (

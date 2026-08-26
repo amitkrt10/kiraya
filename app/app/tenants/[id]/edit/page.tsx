@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getRequestContext } from "@/lib/context/current";
 import { canWriteOrganization } from "@/lib/permissions/resolve";
 import { getTenant } from "@/lib/queries/tenants";
+import { getTenantContacts } from "@/lib/queries/tenantContacts";
 import { updateTenantAction } from "@/lib/actions/tenants";
 import { TenantForm } from "@/components/tenants/TenantForm";
 import { PermissionDenied } from "@/components/ui/ErrorState";
@@ -40,11 +41,14 @@ export default async function EditTenantPage({
     );
   }
 
+  const contacts = await getTenantContacts(id, organizationId);
+
   return (
     <Card>
       <TenantForm
         action={updateTenantAction.bind(null, tenant.id)}
         tenant={tenant}
+        contacts={contacts}
         cancelHref={`/app/tenants/${tenant.id}`}
         submitLabel="Save Changes"
       />

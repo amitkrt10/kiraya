@@ -103,6 +103,28 @@ export interface UnitDetail extends UnitRow {
   properties: { id: string; name: string; property_code: string } | null;
 }
 
+/**
+ * The one authoritative check for whether a unit can currently be
+ * assigned a tenant (kiraya.unit_is_assignable(), P6.3-B) — never
+ * units.status = 'VACANT', which P6.3-A found badly desynced from real
+ * occupancy. This is a UI convenience only: the RPC that actually performs
+ * an assignment re-derives the same fact itself before writing anything,
+ * and leases_unit_active_unique_idx is what actually prevents two
+ * concurrent assignments to the same unit from both succeeding — a stale
+ * `true` read here can never cause a bad write, only a slightly-late
+ * "sorry, that's not available anymore" message.
+ */
+export async function isUnitAssignable(unitId: string): Promise<boolean> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("unit_is_assignable", { p_unit_id: unitId });
+
+  if (error) {
+    throw new Error(`Failed to check unit assignability: ${error.message}`);
+  }
+
+  return data ?? false;
+}
+
 export async function getUnit(unitId: string, organizationId: string): Promise<UnitDetail | null> {
   const supabase = await createClient();
   const { data, error } = await supabase

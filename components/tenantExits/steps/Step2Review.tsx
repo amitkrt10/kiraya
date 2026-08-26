@@ -22,9 +22,9 @@ export function Step2Review({
 }) {
   return (
     <>
-      <h1 style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 22, marginBottom: 6 }}>Tenant / Lease Review</h1>
+      <h1 style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 22, marginBottom: 6 }}>Tenant / Unit Review</h1>
       <div style={{ fontSize: 13, color: "var(--color-neutral-700)", marginBottom: 28 }}>
-        Confirm this is the correct lease before continuing — read-only recap from the tenant and lease records.
+        Confirm this is the correct occupancy before continuing — read-only recap of the tenant and unit records.
       </div>
 
       <Card>
@@ -41,8 +41,7 @@ export function Step2Review({
             </div>
           </div>
           <div>
-            <div style={{ fontSize: 11, textTransform: "uppercase", color: "var(--color-neutral-700)", marginBottom: 4 }}>Lease</div>
-            <div style={{ fontWeight: 600 }}>{lease.lease_code}</div>
+            <div style={{ fontSize: 11, textTransform: "uppercase", color: "var(--color-neutral-700)", marginBottom: 4 }}>Occupancy Status</div>
             <div style={{ marginTop: 4 }}>
               <LeaseStatusTag status={lease.status} />
             </div>
@@ -74,7 +73,7 @@ export function Step2Review({
           margin: "20px 0 24px",
         }}
       >
-        This lease will be marked Ended only when the exit is completed in the final step — nothing changes yet.
+        This occupancy will be marked Ended only when the exit is completed in the final step — nothing changes yet.
       </div>
 
       <div style={{ display: "flex", gap: 10 }}>

@@ -70,34 +70,55 @@ test.describe("cross-organization tenant/lease isolation", () => {
     await expect(page.getByRole("button", { name: "Edit Tenant" })).not.toBeVisible();
   });
 
-  test("org A can read its own lease; org B gets a clean not-found for the same id", async ({ page }) => {
+  test("P6.3-J: org A visiting its own /app/leases/[id] is redirected to the EXACT occupancy page, not the bare unit page; org B gets a clean not-found for the same id", async ({ page }) => {
     await login(page, orgAEmail!, orgAPassword!);
     const orgALeaseId = process.env.E2E_ORG_A_LEASE_ID ?? (await findOrgALeaseId(page));
     test.skip(!orgALeaseId, "No lease currently exists for org A to use as a dynamic fixture.");
 
     await page.goto(`/app/leases/${orgALeaseId}`);
-    await expect(page.getByRole("button", { name: "Edit Lease" })).toBeVisible({ timeout: 10_000 });
+    // P6.3-J: the redirect target now carries the exact occupancy id, not
+    // just the unit id — a bare /app/units/{id} would silently show
+    // whichever lease is ACTIVE *today*, which for an ended/reassigned
+    // occupancy is a different tenant's data (P6.3-I's core finding).
+    await page.waitForURL(new RegExp(`/app/units/[0-9a-f-]+/occupancies/${orgALeaseId}$`));
+    await expect(page.getByText("Occupancy Status")).toBeVisible({ timeout: 10_000 });
 
     await signOut(page);
     await login(page, orgBEmail!, orgBPassword!);
     await page.goto(`/app/leases/${orgALeaseId}`);
     await expect(page.getByText("Page not found")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Edit Lease" })).not.toBeVisible();
   });
 
-  test("org B's tenant/unit pickers on the lease-create form never list org A's records", async ({ page }) => {
+  test("P6.3-J: /app/leases/[id]/edit redirects to the EXACT occupancy page; an invalid id gets normal not-found behavior", async ({ page }) => {
     await login(page, orgAEmail!, orgAPassword!);
-    const orgATenantId = process.env.E2E_ORG_A_TENANT_ID ?? (await findOrgATenantId(page));
-    test.skip(!orgATenantId, "No tenant currently exists for org A to use as a dynamic fixture.");
-    await signOut(page);
+    const orgALeaseId = process.env.E2E_ORG_A_LEASE_ID ?? (await findOrgALeaseId(page));
+    test.skip(!orgALeaseId, "No lease currently exists for org A to use as a dynamic fixture.");
 
+    await page.goto(`/app/leases/${orgALeaseId}/edit`);
+    await page.waitForURL(new RegExp(`/app/units/[0-9a-f-]+/occupancies/${orgALeaseId}$`));
+    await expect(page.getByText("Occupancy Status")).toBeVisible({ timeout: 10_000 });
+
+    await page.goto("/app/leases/00000000-0000-0000-0000-000000000000/edit");
+    await expect(page.getByText("Page not found")).toBeVisible();
+
+    await page.goto("/app/leases/not-a-real-uuid/edit");
+    await expect(page.getByText("Page not found")).toBeVisible();
+  });
+
+  test("P6.3-E: /app/leases/new is retired — it redirects to /app/units rather than showing the old lease-create form", async ({ page }) => {
     await login(page, orgBEmail!, orgBPassword!);
     await page.goto("/app/leases/new");
 
-    const tenantSelect = page.getByLabel("Tenant", { exact: true });
-    const tenantOptionValues = await tenantSelect.locator("option").evaluateAll((options) =>
-      options.map((option) => (option as HTMLOptionElement).value),
-    );
-    expect(tenantOptionValues).not.toContain(orgATenantId);
+    await page.waitForURL(/\/app\/units$/);
+    await expect(page.locator("nav[aria-label='Breadcrumb']").getByText("Units", { exact: true })).toBeVisible();
+    await expect(page.getByLabel("Tenant", { exact: true })).not.toBeVisible();
+  });
+
+  test("P6.3-E: /app/leases (the list) is retired — it redirects to /app/tenants rather than showing the old lease list", async ({ page }) => {
+    await login(page, orgBEmail!, orgBPassword!);
+    await page.goto("/app/leases");
+
+    await page.waitForURL(/\/app\/tenants$/);
+    await expect(page.locator("nav[aria-label='Breadcrumb']").getByText("Tenants", { exact: true })).toBeVisible();
   });
 });

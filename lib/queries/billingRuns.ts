@@ -96,12 +96,13 @@ export async function getBillingRunBills(runId: string, organizationId: string):
 
 export interface BillingRunFailure {
   id: string;
-  resource_id: string;
   description: string | null;
   created_at: string;
-  leaseCode: string | null;
+  tenantId: string | null;
   tenantName: string | null;
+  unitId: string | null;
   unitCode: string | null;
+  propertyName: string | null;
 }
 
 /**
@@ -149,7 +150,7 @@ export async function getBillingRunFailures(run: BillingRunRow): Promise<Billing
   const leaseIds = rows.map((row) => row.resource_id).filter((id): id is string => Boolean(id));
   const { data: leases } = await supabase
     .from("leases")
-    .select("id, lease_code, tenants(display_name), units(unit_code)")
+    .select("id, tenant_id, unit_id, tenants(display_name), units(unit_code, properties(name))")
     .in("id", leaseIds);
 
   const leaseById = new Map((leases ?? []).map((lease) => [lease.id, lease]));
@@ -158,12 +159,13 @@ export async function getBillingRunFailures(run: BillingRunRow): Promise<Billing
     const lease = row.resource_id ? leaseById.get(row.resource_id) : undefined;
     return {
       id: row.id,
-      resource_id: row.resource_id ?? "",
       description: row.description,
       created_at: row.created_at,
-      leaseCode: lease?.lease_code ?? null,
+      tenantId: lease?.tenant_id ?? null,
       tenantName: lease?.tenants?.display_name ?? null,
+      unitId: lease?.unit_id ?? null,
       unitCode: lease?.units?.unit_code ?? null,
+      propertyName: lease?.units?.properties?.name ?? null,
     };
   });
 }

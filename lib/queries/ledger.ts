@@ -9,6 +9,10 @@ export interface GetLedgerEntriesParams {
   organizationId: string;
   tenantId?: string;
   propertyId?: string;
+  /** P6.3-E: filters to one unit's occupancy (or occupancies, if the same tenant held this unit across more than one lease) — resolved to lease_id(s) the same way propertyId already is. */
+  unitId?: string;
+  /** P6.3-J: filters to exactly one occupancy's own lease_id — the precise filter unitId can't provide when a unit has had more than one lease, e.g. the historical occupancy detail page. Takes precedence over unitId if both are somehow given. */
+  leaseId?: string;
   entryType?: LedgerEntryType;
   dateFrom?: string;
   dateTo?: string;
@@ -57,6 +61,32 @@ async function resolvePropertyLeaseIds(
   return (data ?? []).map((row) => row.id);
 }
 
+/**
+ * Same resolve-then-filter pattern as resolvePropertyLeaseIds() — the view
+ * has no unit_id of its own (an entry is tenant/lease/bill/payment-scoped,
+ * not unit-scoped), so a unit filter goes through the tenant's own lease
+ * ids for that unit. Scoped additionally by tenantId when given, since this
+ * is only ever used for one tenant's own Ledger tab (P6.3-E) — never a
+ * cross-tenant unit lookup.
+ */
+async function resolveUnitLeaseIds(
+  supabase: SupabaseServerClient,
+  organizationId: string,
+  unitId: string,
+  tenantId?: string,
+): Promise<string[]> {
+  let query = supabase.from("leases").select("id").eq("organization_id", organizationId).eq("unit_id", unitId);
+  if (tenantId) query = query.eq("tenant_id", tenantId);
+
+  const { data, error } = await query;
+
+  if (error) {
+    throw new Error(`Failed to resolve unit leases: ${error.message}`);
+  }
+
+  return (data ?? []).map((row) => row.id);
+}
+
 /** Org-wide or tenant-scoped ledger, paginated, filtered entirely in Postgres — every value (including running_balance) comes straight from kiraya.v_tenant_ledger, never recomputed here. */
 export async function getLedgerEntries(params: GetLedgerEntriesParams): Promise<GetLedgerEntriesResult> {
   const supabase = await createClient();
@@ -68,10 +98,15 @@ export async function getLedgerEntries(params: GetLedgerEntriesParams): Promise<
   const propertyLeaseIds = params.propertyId
     ? await resolvePropertyLeaseIds(supabase, params.organizationId, params.propertyId)
     : undefined;
+  const unitLeaseIds = params.unitId
+    ? await resolveUnitLeaseIds(supabase, params.organizationId, params.unitId, params.tenantId)
+    : undefined;
 
   let query = supabase.from("v_tenant_ledger").select("*", { count: "exact" }).eq("organization_id", params.organizationId);
   if (params.tenantId) query = query.eq("tenant_id", params.tenantId);
+  if (params.leaseId) query = query.eq("lease_id", params.leaseId);
   if (propertyLeaseIds) query = query.in("lease_id", propertyLeaseIds.length > 0 ? propertyLeaseIds : [NO_MATCH_LEASE_ID]);
+  if (unitLeaseIds) query = query.in("lease_id", unitLeaseIds.length > 0 ? unitLeaseIds : [NO_MATCH_LEASE_ID]);
   if (params.entryType) query = query.eq("entry_type", params.entryType);
   if (params.dateFrom) query = query.gte("entry_date", params.dateFrom);
   if (params.dateTo) query = query.lte("entry_date", params.dateTo);
@@ -97,10 +132,15 @@ export async function getLedgerEntriesForExport(
   const propertyLeaseIds = params.propertyId
     ? await resolvePropertyLeaseIds(supabase, params.organizationId, params.propertyId)
     : undefined;
+  const unitLeaseIds = params.unitId
+    ? await resolveUnitLeaseIds(supabase, params.organizationId, params.unitId, params.tenantId)
+    : undefined;
 
   let query = supabase.from("v_tenant_ledger").select("*").eq("organization_id", params.organizationId);
   if (params.tenantId) query = query.eq("tenant_id", params.tenantId);
+  if (params.leaseId) query = query.eq("lease_id", params.leaseId);
   if (propertyLeaseIds) query = query.in("lease_id", propertyLeaseIds.length > 0 ? propertyLeaseIds : [NO_MATCH_LEASE_ID]);
+  if (unitLeaseIds) query = query.in("lease_id", unitLeaseIds.length > 0 ? unitLeaseIds : [NO_MATCH_LEASE_ID]);
   if (params.entryType) query = query.eq("entry_type", params.entryType);
   if (params.dateFrom) query = query.gte("entry_date", params.dateFrom);
   if (params.dateTo) query = query.lte("entry_date", params.dateTo);

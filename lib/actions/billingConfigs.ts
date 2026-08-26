@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireOrganizationWriteAccess } from "./shared";
 import { parseBillingConfigFormData } from "@/lib/validation/billingConfig";
 import { createBillingConfig } from "@/lib/mutations/billingConfigs";
+import { getLeaseUnitId } from "@/lib/queries/leases";
 import type { BillingConfigRow } from "@/lib/queries/billingConfigs";
 
 export interface BillingConfigActionState {
@@ -35,5 +36,9 @@ export async function createBillingConfigAction(
   }
 
   revalidatePath(`/app/leases/${leaseId}`);
+  const unitId = await getLeaseUnitId(leaseId, access.organizationId);
+  if (unitId) {
+    revalidatePath(`/app/units/${unitId}`);
+  }
   return { success: true, billingConfig: result.data };
 }

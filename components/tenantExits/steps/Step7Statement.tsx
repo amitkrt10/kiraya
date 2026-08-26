@@ -73,11 +73,6 @@ export function Step7Statement({
             </b>
           </div>
           <div>
-            <span style={{ color: "var(--color-neutral-700)" }}>Lease</span>
-            <br />
-            <b>{statement.lease_code}</b>
-          </div>
-          <div>
             <span style={{ color: "var(--color-neutral-700)" }}>Exit Date</span>
             <br />
             <b>{statement.actual_end_date ?? "—"}</b>

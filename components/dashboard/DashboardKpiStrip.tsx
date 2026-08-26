@@ -1,4 +1,5 @@
 import type { OrganizationDashboardRow } from "@/lib/queries/dashboard";
+import type { PropertyUnitCounts } from "@/lib/queries/properties";
 import styles from "./DashboardKpiStrip.module.css";
 
 function formatCurrency(amount: number): string {
@@ -12,22 +13,29 @@ function monthLabel(periodMonth: string): string {
 /**
  * Every value here comes directly from kiraya.v_organization_dashboard (or,
  * for the Outstanding delta, kiraya.getBillDueBreakdown()) — no client-side
- * financial math. Deltas the approved design shows but that have no
- * authoritative source today (e.g. "+1.1% vs last month", "4 new this
+ * financial math — EXCEPT Units/Occupancy, which use unitCounts
+ * (getOrganizationUnitCounts(), P6.3-E) instead of the view's own
+ * vacant_unit_count/occupancy_percentage columns: those are derived from
+ * units.status, the same unreliable signal P6.3-D already replaced at the
+ * property level. unitCounts is ACTIVE-lease-derived, matching Unit Detail
+ * and Property occupancy. Deltas the approved design shows but that have
+ * no authoritative source today (e.g. "+1.1% vs last month", "4 new this
  * month") are omitted rather than invented.
  */
 export function DashboardKpiStrip({
   latest,
   overdueCount,
+  unitCounts,
 }: {
   latest: OrganizationDashboardRow | null;
   overdueCount: number;
+  unitCounts: PropertyUnitCounts;
 }) {
   const tiles = latest
     ? [
         { label: "Properties", value: latest.property_count ?? 0, delta: null },
-        { label: "Units", value: latest.unit_count ?? 0, delta: `${latest.vacant_unit_count ?? 0} vacant`, accent: false },
-        { label: "Occupancy", value: `${(latest.occupancy_percentage ?? 0).toFixed(1)}%`, delta: null },
+        { label: "Units", value: unitCounts.totalUnits, delta: `${unitCounts.vacantUnits} vacant`, accent: false },
+        { label: "Occupancy", value: `${unitCounts.occupancyPercentage.toFixed(1)}%`, delta: null },
         { label: "Tenants", value: latest.active_tenant_count ?? 0, delta: null },
         {
           label: "Outstanding",
@@ -44,8 +52,8 @@ export function DashboardKpiStrip({
       ]
     : [
         { label: "Properties", value: 0, delta: null },
-        { label: "Units", value: 0, delta: null },
-        { label: "Occupancy", value: "0.0%", delta: null },
+        { label: "Units", value: unitCounts.totalUnits, delta: `${unitCounts.vacantUnits} vacant`, accent: false },
+        { label: "Occupancy", value: `${unitCounts.occupancyPercentage.toFixed(1)}%`, delta: null },
         { label: "Tenants", value: 0, delta: null },
         { label: "Outstanding", value: formatCurrency(0), delta: null },
         { label: "Collected", value: formatCurrency(0), delta: null },

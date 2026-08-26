@@ -74,14 +74,14 @@ test.describe("Tenant Exit & Settlement wizard", () => {
     await page.waitForURL(/\/app\/exits\/new/);
     await page.getByLabel("Planned Exit Date").fill("2026-03-15");
     await page.getByLabel("Reason").fill("Relocating to another city");
-    await page.getByRole("button", { name: "Continue to Tenant / Lease Review" }).click();
+    await page.getByRole("button", { name: "Continue to Tenant / Unit Review" }).click();
     await page.waitForURL(/\/app\/exits\/.+\/review/);
     const exitUrl = page.url();
     const exitId = exitUrl.match(/\/exits\/([^/]+)\//)?.[1];
     expect(exitId).toBeTruthy();
 
     // 2. Tenant/lease review displays correct data (real tenant/lease/unit, not placeholders).
-    await expect(page.getByRole("heading", { name: "Tenant / Lease Review" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Tenant / Unit Review" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Confirm & Continue" })).toBeVisible();
     await page.getByRole("link", { name: "Confirm & Continue" }).click();
     await page.waitForURL(/\/dues/);
@@ -159,13 +159,17 @@ test.describe("Tenant Exit & Settlement wizard", () => {
     // 12. Completion changes exit to COMPLETED.
     await expect(page.getByText("This exit is complete.")).toBeVisible({ timeout: 15_000 });
 
-    // 13. Lease becomes ENDED.
-    await page.goto(`/app/leases/${exitLeaseId}`);
+    // 13. Lease becomes ENDED. P6.3-F retired /app/leases/[id] — it now
+    // redirects to the unit's own page, which only shows the unit's
+    // *current* occupancy (this one no longer qualifies once ended), so
+    // this checks the same underlying fact via Tenant Detail's Occupancy
+    // History tab instead, which already lists every past occupancy with
+    // its real status.
+    await page.goto(`/app/tenants/${exitTenantId}`);
+    await page.getByRole("tab", { name: "Occupancy History" }).click();
     await expect(page.getByText("Ended", { exact: true })).toBeVisible();
-    await expect(page.getByText(/Actual End/)).toBeVisible();
 
     // 19. Existing REFUND transaction history remains correct — visible, read-only, on the Deposit tab.
-    await page.goto(`/app/tenants/${exitTenantId}`);
     await page.getByRole("tab", { name: "Deposit" }).click();
     if (hasDepositRefund) {
       await expect(page.getByText("Refund", { exact: true }).first()).toBeVisible();
@@ -201,7 +205,7 @@ test.describe("Tenant Exit — unit vacancy with a shared unit", () => {
 
     await page.goto(`/app/exits/new?leaseId=${sharedUnitLeaseId}`);
     await page.getByLabel("Planned Exit Date").fill("2026-03-15");
-    await page.getByRole("button", { name: "Continue to Tenant / Lease Review" }).click();
+    await page.getByRole("button", { name: "Continue to Tenant / Unit Review" }).click();
     await page.waitForURL(/\/review/);
     await page.getByRole("link", { name: "Confirm & Continue" }).click();
     await page.waitForURL(/\/dues/);
@@ -223,8 +227,20 @@ test.describe("Tenant Exit — unit vacancy with a shared unit", () => {
     await page.getByRole("button", { name: "Complete Exit" }).click();
     await expect(page.getByText("This exit is complete.")).toBeVisible({ timeout: 15_000 });
 
-    // 14/15. Unit status left unchanged (not forced to VACANT) because another lease reserves it.
+    // 14/15. kiraya.complete_tenant_exit() never force-resets units.status
+    // to VACANT when another lease (this unit's incoming DRAFT reservation)
+    // still reserves the unit — verified directly below via unit_is_assignable().
+    //
+    // P6.3-H unified the "Status" row shown here with that same
+    // authoritative ACTIVE-lease signal (previously it read the raw,
+    // unreliable units.status column directly — the exact bug P6.3-G
+    // found and this checkpoint fixed). With no ACTIVE lease left on this
+    // unit (only a DRAFT reservation, which unit_is_assignable() does not
+    // treat as occupying), the Status row now correctly reads "Vacant" —
+    // consistent with the "Current Tenant" panel's own "Vacant." text on
+    // the same page, rather than the two disagreeing as they used to.
     await page.goto(`/app/units/${sharedUnitId}`);
-    await expect(page.getByText("Vacant")).not.toBeVisible();
+    const statusValue = page.locator("xpath=//span[normalize-space(.)='Status']/following-sibling::span[1]");
+    await expect(statusValue).toHaveText("Vacant");
   });
 });

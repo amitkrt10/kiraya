@@ -29,7 +29,6 @@ export function Step9Completion({
   completedDepositRefunds,
   tenantName,
   unitLabel,
-  leaseCode,
   canWrite,
   canComplete,
 }: {
@@ -39,7 +38,6 @@ export function Step9Completion({
   completedDepositRefunds: DepositRefundRow[];
   tenantName: string;
   unitLabel: string;
-  leaseCode: string;
   canWrite: boolean;
   canComplete: boolean;
 }) {
@@ -133,18 +131,16 @@ export function Step9Completion({
           </>
         }
       >
-        <p style={{ fontSize: 13, color: "var(--color-neutral-700)", marginBottom: 20 }}>
-          {unitLabel} · Lease {leaseCode}
-        </p>
+        <p style={{ fontSize: 13, color: "var(--color-neutral-700)", marginBottom: 20 }}>{unitLabel}</p>
         <div style={{ borderTop: "1px solid var(--color-neutral-300)", borderBottom: "1px solid var(--color-neutral-300)", padding: "16px 0", marginBottom: 16 }}>
           <div style={{ fontSize: 12, color: "var(--color-neutral-700)", marginBottom: 8 }}>This will:</div>
           <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, lineHeight: 1.8 }}>
             <li>Mark this tenant exit Completed</li>
-            <li>End the lease{exit.actual_exit_date ? `, effective ${exit.actual_exit_date}` : ""}</li>
+            <li>End this occupancy{exit.actual_exit_date ? `, effective ${exit.actual_exit_date}` : ""}</li>
             <li>
               Set the unit to Vacant —{" "}
               <span style={{ color: "var(--color-neutral-700)" }}>
-                unless another active or draft lease already reserves it, in which case the unit&apos;s status is left unchanged
+                unless another active or draft occupancy already reserves it, in which case the unit&apos;s status is left unchanged
               </span>
             </li>
           </ul>

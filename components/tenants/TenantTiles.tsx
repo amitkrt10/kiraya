@@ -34,14 +34,14 @@ export function TenantTiles({
 }) {
   const tiles = [
     { label: "Status", value: STATUS_LABELS[tenant.status] },
-    { label: "Active Leases", value: activeLeaseCount.toString() },
+    { label: "Active Units", value: activeLeaseCount.toString() },
     {
       label: "Current Property / Unit",
       value: currentLease?.units
         ? `${currentLease.units.properties?.name ?? ""} · ${currentLease.units.unit_code}`
         : "—",
     },
-    { label: "Lease Ends", value: currentLease?.agreement_end_date ?? "—" },
+    { label: "Occupancy Ends", value: currentLease?.agreement_end_date ?? "—" },
     { label: "Outstanding", value: formatCurrency(outstanding) },
     { label: "Available Credit", value: formatCurrency(credit) },
   ];

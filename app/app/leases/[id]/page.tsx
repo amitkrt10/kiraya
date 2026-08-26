@@ -1,81 +1,42 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getRequestContext } from "@/lib/context/current";
-import { canWriteOrganization } from "@/lib/permissions/resolve";
-import { getLease } from "@/lib/queries/leases";
-import { getLeaseParties } from "@/lib/queries/leaseParties";
-import { getLeaseRentRules } from "@/lib/queries/rentRules";
-import { getLeaseBillingConfigs } from "@/lib/queries/billingConfigs";
-import { getTenantsForPicker } from "@/lib/queries/tenants";
-import { getLeaseBills } from "@/lib/queries/bills";
-import { LeaseHeaderBand } from "@/components/leases/LeaseHeaderBand";
-import { LeaseDetailTabs } from "@/components/leases/LeaseDetailTabs";
-import { Alert } from "@/components/ui/Alert";
+import { getLeaseUnitId } from "@/lib/queries/leases";
 import { isUuid } from "@/lib/utils/uuid";
 
-const SETUP_LABELS: Record<string, string> = {
-  rentRule: "rent rule",
-  billingConfig: "billing configuration",
-};
-
-export default async function LeaseDetailPage({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ id: string }>;
-  searchParams: Promise<{ setupIncomplete?: string }>;
-}) {
+/**
+ * P6.3-F: retired — Unit Detail's Occupancy tab (plus its Rent/Billing/
+ * Deposit/Exit tabs, P6.3-D) is now the complete replacement, verified
+ * against every field this page used to show. Redirects rather than
+ * 404s so a stale bookmark/link to a real historical lease still lands
+ * somewhere useful; an invalid or inaccessible id still gets the normal
+ * not-found behavior (never a distinguishable cross-org leak). The
+ * underlying kiraya.leases row and this route's now-unused components
+ * (LeaseHeaderBand/LeaseDetailTabs/LeaseOverview/LeasePartiesTable) are
+ * untouched — only this page's own content changed.
+ *
+ * P6.3-J: redirects into the exact occupancy
+ * (`/app/units/{unitId}/occupancies/{leaseId}`), not the bare unit page.
+ * The bare `/app/units/{unitId}` only ever shows whichever lease is
+ * ACTIVE *today* — for an old bookmark to a since-ended, since-reassigned
+ * occupancy, that silently substituted a different tenant's current data
+ * with no indication anything had changed (reproduced live by the P6.3-I
+ * audit). This id is always still exactly the lease the user asked for.
+ */
+export default async function LeaseDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   if (!isUuid(id)) {
     notFound();
   }
-
-  const { setupIncomplete } = await searchParams;
 
   const context = await getRequestContext();
   if (!context?.organization) {
     return null;
   }
 
-  const organizationId = context.organization.organizationId;
-
-  const [lease, parties, rentRules, billingConfigs, tenants, bills, canWrite] = await Promise.all([
-    getLease(id, organizationId),
-    getLeaseParties(id, organizationId),
-    getLeaseRentRules(id, organizationId),
-    getLeaseBillingConfigs(id, organizationId),
-    getTenantsForPicker(organizationId),
-    getLeaseBills(id, organizationId),
-    canWriteOrganization(organizationId),
-  ]);
-
-  if (!lease) {
+  const unitId = await getLeaseUnitId(id, context.organization.organizationId);
+  if (!unitId) {
     notFound();
   }
 
-  const incompleteParts = (setupIncomplete ?? "")
-    .split(",")
-    .filter(Boolean)
-    .map((key) => SETUP_LABELS[key] ?? key);
-
-  return (
-    <div>
-      {incompleteParts.length > 0 ? (
-        <div style={{ marginBottom: 16 }}>
-          <Alert variant="warning">
-            The lease was created, but its {incompleteParts.join(" and ")} couldn&apos;t be saved. Add it below.
-          </Alert>
-        </div>
-      ) : null}
-      <LeaseHeaderBand lease={lease} canWrite={canWrite} />
-      <LeaseDetailTabs
-        lease={lease}
-        parties={parties}
-        tenants={tenants}
-        rentRules={rentRules}
-        billingConfigs={billingConfigs}
-        bills={bills}
-        canWrite={canWrite}
-      />
-    </div>
-  );
+  redirect(`/app/units/${unitId}/occupancies/${id}`);
 }

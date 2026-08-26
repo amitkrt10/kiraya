@@ -41,7 +41,7 @@ export function BillingConfigPanel({
         <EmptyState
           icon={Wallet}
           title="No billing configuration set"
-          description="Add a billing configuration to define how this lease generates bills."
+          description="Add a billing configuration to define how this occupancy generates bills."
           action={canWrite ? <BillingConfigFormDrawer leaseId={leaseId} /> : undefined}
         />
       ) : (

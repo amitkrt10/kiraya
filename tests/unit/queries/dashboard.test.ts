@@ -89,13 +89,22 @@ describe("getUpcomingLeaseExpiries — reuses kiraya.v_lease_expiry_alerts, no d
     const rows = [
       {
         lease_id: "lease-1",
+        unit_id: "unit-1",
         tenant_name: "Farida Khan",
         unit_code: "2C",
         property_name: "Green Court",
         days_until_expiry: 12,
         alert_status: "EXPIRING_30_DAYS",
       },
-      { lease_id: null, tenant_name: null, unit_code: null, property_name: null, days_until_expiry: null, alert_status: null },
+      {
+        lease_id: null,
+        unit_id: null,
+        tenant_name: null,
+        unit_code: null,
+        property_name: null,
+        days_until_expiry: null,
+        alert_status: null,
+      },
     ];
     const { chain } = createChainMock({ data: rows, error: null });
     mockCreateClient.mockReturnValue({ from: vi.fn(() => chain) });
@@ -103,7 +112,14 @@ describe("getUpcomingLeaseExpiries — reuses kiraya.v_lease_expiry_alerts, no d
     const result = await getUpcomingLeaseExpiries("org-a");
 
     expect(result).toEqual([
-      { leaseId: "lease-1", tenantName: "Farida Khan", unitLabel: "Green Court · 2C", daysUntilExpiry: 12, alertStatus: "EXPIRING_30_DAYS" },
+      {
+        leaseId: "lease-1",
+        unitId: "unit-1",
+        tenantName: "Farida Khan",
+        unitLabel: "Green Court · 2C",
+        daysUntilExpiry: 12,
+        alertStatus: "EXPIRING_30_DAYS",
+      },
     ]);
   });
 });

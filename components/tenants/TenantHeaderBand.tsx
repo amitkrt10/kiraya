@@ -10,16 +10,21 @@ import styles from "./TenantHeaderBand.module.css";
 export function TenantHeaderBand({
   tenant,
   currentLease,
+  activeLeaseCount,
   canWrite,
 }: {
   tenant: TenantRow;
   currentLease: LeaseListItem | null;
+  activeLeaseCount: number;
   canWrite: boolean;
 }) {
   const contact = [tenant.phone, tenant.email].filter(Boolean).join(" · ");
-  const unitContext = currentLease?.units
-    ? `${currentLease.units.properties?.name ?? ""} · ${currentLease.units.unit_code}`
-    : "No active lease";
+  const unitContext =
+    activeLeaseCount > 1
+      ? `${activeLeaseCount} active units`
+      : currentLease?.units
+        ? `${currentLease.units.properties?.name ?? ""} · ${currentLease.units.unit_code}`
+        : "No active unit";
 
   return (
     <div className={styles.band}>
@@ -36,11 +41,11 @@ export function TenantHeaderBand({
         </div>
       </div>
       <div className={styles.actions}>
-        {currentLease ? (
-          <Link href={`/app/leases/${currentLease.id}`}>
+        {currentLease && activeLeaseCount === 1 ? (
+          <Link href={`/app/units/${currentLease.unit_id}`}>
             <Button variant="secondary">
               <FileText width={16} height={16} aria-hidden="true" />
-              View Lease
+              View Unit
             </Button>
           </Link>
         ) : null}

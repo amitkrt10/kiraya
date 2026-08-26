@@ -33,7 +33,7 @@ const UNIQUE_CONSTRAINT_MESSAGES: UniqueConstraintMessage[] = [
   },
   { constraint: "payments_org_number_unique_idx", message: "Payment number already exists in this organization." },
   { constraint: "tenant_exits_org_reference_unique_idx", message: "That exit reference already exists — try again." },
-  { constraint: "tenant_exits_active_lease_unique_idx", message: "This lease already has an exit in progress." },
+  { constraint: "tenant_exits_active_lease_unique_idx", message: "This occupancy already has an exit in progress." },
   { constraint: "exit_settlements_org_reference_unique_idx", message: "That settlement reference already exists — try again." },
   { constraint: "deposit_refunds_org_reference_unique_idx", message: "That refund reference already exists — try again." },
   { constraint: "utilities_org_code_unique_idx", message: "A utility with this code already exists in this organization." },
@@ -41,6 +41,10 @@ const UNIQUE_CONSTRAINT_MESSAGES: UniqueConstraintMessage[] = [
   { constraint: "meters_org_code_unique_idx", message: "A meter with this code already exists in this organization." },
   { constraint: "meter_reading_batches_org_code_unique_idx", message: "A batch with this code already exists in this organization." },
   { constraint: "meter_readings_meter_date_unique_idx", message: "This meter already has a reading recorded for that date." },
+  {
+    constraint: "leases_unit_active_unique_idx",
+    message: "This unit was just assigned to another tenant. Please choose a different unit.",
+  },
 ];
 
 const EXCLUSION_CONSTRAINT_MESSAGES: UniqueConstraintMessage[] = [
@@ -48,7 +52,24 @@ const EXCLUSION_CONSTRAINT_MESSAGES: UniqueConstraintMessage[] = [
     constraint: "utility_configurations_no_active_overlap",
     message: "An active configuration for this utility already covers an overlapping period for this property or unit.",
   },
+  {
+    constraint: "lease_rent_rules_no_active_overlap",
+    message: "An overlapping rent rule already exists for this period.",
+  },
 ];
+
+/**
+ * A handful of this schema's own hand-authored trigger messages (clean
+ * enough to pass isCleanAuthoredMessage()'s heuristic) still say "lease"
+ * verbatim — fine on the dedicated Lease pages that authored them, but
+ * these specific ones can also surface on Tenant/Unit-facing screens
+ * (e.g. kiraya.validate_lease_overlap()'s message reaching Unit Detail's
+ * Assign Tenant drawer, P6.3-C/D/E). Rewritten here rather than in the
+ * trigger itself, per this checkpoint's "prefer no migration" rule.
+ */
+const AUTHORED_MESSAGE_OVERRIDES: Record<string, string> = {
+  "Lease occupancy period overlaps another lease for this unit.": "This unit already has an overlapping occupancy for this period.",
+};
 
 /**
  * Translates a Postgres error from a properties/units/owners/property_ownerships/
@@ -100,6 +121,10 @@ export function translateDatabaseError(error: PostgrestError): string {
     // generated message (utility_configurations_no_active_overlap, added in
     // P5.5B) is not pre-authored, so it needs the same constraint-name
     // lookup UNIQUE_VIOLATION already uses below.
+    const override = AUTHORED_MESSAGE_OVERRIDES[error.message];
+    if (override) {
+      return override;
+    }
     if (isCleanAuthoredMessage(error.message)) {
       return error.message;
     }

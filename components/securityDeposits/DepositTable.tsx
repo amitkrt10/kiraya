@@ -29,16 +29,27 @@ export function DepositTable({ deposits }: { deposits: SecurityDepositListItem[]
         {deposits.map((deposit) => (
           <TableRow key={deposit.id}>
             <TableCell style={{ fontWeight: 600 }}>
-              {/* Tenant Detail is the only place with a Deposit tab — ?tab=deposit
-                  opens straight to it (TenantDetailTabs reads this once on mount). */}
-              <Link href={`/app/tenants/${deposit.tenant_id}?tab=deposit`}>{deposit.deposit_reference}</Link>
+              {/*
+                P6.3-H: this must never link to Tenant Detail's ?tab=deposit —
+                that tab resolves to only one occupancy (the tenant's current
+                lease, or their single most recent ended one), so for a
+                tenant with more than one ended occupancy it can silently
+                open a *different* deposit than the one clicked here.
+                P6.3-J: links to this deposit's exact occupancy page (never
+                the bare unit page, which — like the tenant tab above —
+                would show whichever lease is ACTIVE *today*, not
+                necessarily this deposit's own lease if the unit has since
+                been reassigned).
+              */}
+              {deposit.leases ? (
+                <Link href={`/app/units/${deposit.leases.unit_id}/occupancies/${deposit.lease_id}`}>{deposit.deposit_reference}</Link>
+              ) : (
+                deposit.deposit_reference
+              )}
             </TableCell>
             <TableCell>
-              {deposit.tenants ? (
-                <Link href={`/app/tenants/${deposit.tenant_id}?tab=deposit`}>{deposit.tenants.display_name}</Link>
-              ) : (
-                "—"
-              )}
+              {/* Generic tenant link only — deliberately no ?tab=deposit, since that tab can't be trusted to resolve back to this specific deposit. */}
+              {deposit.tenants ? <Link href={`/app/tenants/${deposit.tenant_id}`}>{deposit.tenants.display_name}</Link> : "—"}
             </TableCell>
             <TableCell style={{ color: "var(--color-neutral-700)" }}>
               {deposit.leases?.units?.properties?.name ?? "—"}

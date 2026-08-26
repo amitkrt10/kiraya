@@ -80,7 +80,7 @@ export default async function BillingPage({
           description={
             hasFilters
               ? "Try adjusting your filters."
-              : "Run billing to generate bills for your active leases."
+              : "Run billing to generate bills for your active occupancies."
           }
           action={
             !hasFilters && canWrite ? (

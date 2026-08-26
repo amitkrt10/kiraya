@@ -499,7 +499,6 @@ describe("Step9Completion — separate refund totals, completion never gated on 
         completedDepositRefunds={[makeDepositRefund({ amount: 43000 })]}
         tenantName="Ananya Rao"
         unitLabel="A-304"
-        leaseCode="LSE-1"
         canWrite={true}
         canComplete={true}
       />,
@@ -519,7 +518,6 @@ describe("Step9Completion — separate refund totals, completion never gated on 
         completedDepositRefunds={[]}
         tenantName="Ananya Rao"
         unitLabel="A-304"
-        leaseCode="LSE-1"
         canWrite={true}
         canComplete={true}
       />,
@@ -538,7 +536,6 @@ describe("Step9Completion — separate refund totals, completion never gated on 
         completedDepositRefunds={[]}
         tenantName="Ananya Rao"
         unitLabel="A-304"
-        leaseCode="LSE-1"
         canWrite={false}
         canComplete={true}
       />,
@@ -555,7 +552,6 @@ describe("Step9Completion — separate refund totals, completion never gated on 
         completedDepositRefunds={[]}
         tenantName="Ananya Rao"
         unitLabel="A-304"
-        leaseCode="LSE-1"
         canWrite={true}
         canComplete={false}
       />,
@@ -566,9 +562,9 @@ describe("Step9Completion — separate refund totals, completion never gated on 
 });
 
 describe("TenantExitTab — empty state and permission gating", () => {
-  it("shows a plain empty state with no CTA when no active lease exists", () => {
+  it("shows a plain empty state with no CTA when no active occupancy exists", () => {
     render(<TenantExitTab currentLeaseId={null} exit={null} settlement={null} canWrite={true} />);
-    expect(screen.getByText("No active lease")).toBeInTheDocument();
+    expect(screen.getByText("No active occupancy")).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Start Tenant Exit" })).not.toBeInTheDocument();
   });
 

@@ -24,7 +24,7 @@ import {
   completeTenantExit,
 } from "@/lib/mutations/tenantExits";
 import { getExitSettlementById, getDepositRefunds, getTenantCreditRefunds } from "@/lib/queries/tenantExits";
-import { getSecurityDeposit } from "@/lib/queries/securityDeposits";
+import { getSecurityDepositByLease } from "@/lib/queries/securityDeposits";
 
 export interface TenantExitActionState {
   error?: string;
@@ -164,17 +164,32 @@ export async function createDepositRefundAction(
     return { error: "Fix the highlighted fields.", fieldErrors: z.flattenError(parsed.error).fieldErrors };
   }
 
-  const [settlement, deposit, existingRefunds] = await Promise.all([
-    getExitSettlementById(exitSettlementId, access.organizationId),
-    getSecurityDeposit(tenantId, access.organizationId),
-    getDepositRefunds(exitSettlementId, access.organizationId),
-  ]);
-
+  const settlement = await getExitSettlementById(exitSettlementId, access.organizationId);
   if (!settlement) {
     return { error: "Exit settlement does not exist." };
   }
+  // Defense in depth: tenantId is a bound argument, not re-derived from
+  // trusted server state above this line, so it's verified against the
+  // org-scoped settlement itself rather than trusted outright — the
+  // settlement, not the caller-supplied tenantId, is what determines
+  // which lease/deposit/tenant this refund can touch.
+  if (settlement.tenant_id !== tenantId) {
+    return { error: "Exit settlement does not belong to this tenant." };
+  }
+
+  // The deposit is always resolved by settlement.lease_id — the exit's own
+  // occupancy, already verified to belong to this organization above —
+  // never by the tenantId passed into this action. A tenant can hold
+  // multiple leases (one per unit) with independent deposits; resolving
+  // by tenant alone could silently refund a different unit's deposit than
+  // the one this exit is actually for.
+  const [deposit, existingRefunds] = await Promise.all([
+    getSecurityDepositByLease(settlement.lease_id, access.organizationId),
+    getDepositRefunds(exitSettlementId, access.organizationId),
+  ]);
+
   if (!deposit) {
-    return { error: "No security deposit is on file for this tenant." };
+    return { error: "No security deposit is on file for this lease." };
   }
 
   const alreadyRecorded = existingRefunds

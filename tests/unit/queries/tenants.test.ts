@@ -8,7 +8,7 @@ vi.mock("@/lib/supabase/server", () => ({
   createClient: () => mockCreateClient(),
 }));
 
-const { getTenant, getTenants, getTenantsForPicker } = await import("@/lib/queries/tenants");
+const { getTenant, getTenants, getTenantsForPicker, getActiveTenantsForPicker } = await import("@/lib/queries/tenants");
 
 describe("getTenant — organization context is respected", () => {
   beforeEach(() => {
@@ -80,5 +80,45 @@ describe("getTenantsForPicker — organization context is respected", () => {
 
     const eqCalls = callsFor(calls, "eq");
     expect(eqCalls).toContainEqual(["organization_id", "org-a"]);
+  });
+});
+
+describe("getActiveTenantsForPicker — P6.3-C Assign Tenant picker: active + org-scoped, never filtered by existing occupancy", () => {
+  beforeEach(() => {
+    mockCreateClient.mockReset();
+  });
+
+  it("scopes by organization id and status=ACTIVE, and nothing else", async () => {
+    const { chain, calls } = createChainMock({ data: [], error: null });
+    mockCreateClient.mockReturnValue({ from: vi.fn(() => chain) });
+
+    await getActiveTenantsForPicker("org-a");
+
+    const eqCalls = callsFor(calls, "eq");
+    expect(eqCalls).toContainEqual(["organization_id", "org-a"]);
+    expect(eqCalls).toContainEqual(["status", "ACTIVE"]);
+    // Critically: no lease/unit-based filter of any kind — a tenant who
+    // already occupies another unit must still be selectable here.
+    expect(eqCalls.some(([column]) => column === "unit_id" || column === "lease_id")).toBe(false);
+    expect(callsFor(calls, "in")).toHaveLength(0);
+  });
+
+  it("returns the tenants the query yields, unfiltered by this function beyond what the query itself does", async () => {
+    const { chain } = createChainMock({
+      data: [{ id: "t1", tenant_code: "KIR-001", display_name: "Tenant One" }],
+      error: null,
+    });
+    mockCreateClient.mockReturnValue({ from: vi.fn(() => chain) });
+
+    const result = await getActiveTenantsForPicker("org-a");
+
+    expect(result).toEqual([{ id: "t1", tenant_code: "KIR-001", display_name: "Tenant One" }]);
+  });
+
+  it("throws a descriptive error when the query fails", async () => {
+    const { chain } = createChainMock({ data: null, error: { message: "boom" } });
+    mockCreateClient.mockReturnValue({ from: vi.fn(() => chain) });
+
+    await expect(getActiveTenantsForPicker("org-a")).rejects.toThrow("Failed to load tenants: boom");
   });
 });

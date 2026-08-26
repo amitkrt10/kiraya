@@ -34,7 +34,7 @@ export default async function PropertyDetailPage({
   const [property, unitCounts, units, unitTypes, propertyTypes, ownerships, owners, canWrite] =
     await Promise.all([
       getProperty(id, organizationId),
-      getPropertyUnitCounts(id),
+      getPropertyUnitCounts(id, organizationId),
       getPropertyUnits(id, organizationId),
       getUnitTypes(organizationId),
       getPropertyTypes(organizationId),

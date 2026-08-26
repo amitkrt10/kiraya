@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
     organizationId: context.organization.organizationId,
     tenantId: searchParams.get("tenant") ?? undefined,
     propertyId: searchParams.get("property") ?? undefined,
+    unitId: searchParams.get("unit") ?? undefined,
     entryType: (searchParams.get("type") as LedgerEntryType | null) ?? undefined,
     dateFrom: searchParams.get("from") ?? undefined,
     dateTo: searchParams.get("to") ?? undefined,

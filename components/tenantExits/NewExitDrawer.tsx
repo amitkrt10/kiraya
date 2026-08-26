@@ -50,13 +50,13 @@ export function NewExitDrawer({ eligibleLeases }: { eligibleLeases: LeaseListIte
           <EmptyState
             icon={DoorOpen}
             title="No eligible tenants"
-            description="Every active lease already has a tenant exit in progress, or there are no active leases yet."
+            description="Every active occupancy already has a tenant exit in progress, or there are no active occupancies yet."
           />
         ) : (
           <>
             <Input
-              label="Search tenant, property, unit, or lease"
-              placeholder="Tenant, property, unit, or lease code…"
+              label="Search tenant, property, or unit"
+              placeholder="Tenant, property, or unit…"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               autoFocus
@@ -70,7 +70,6 @@ export function NewExitDrawer({ eligibleLeases }: { eligibleLeases: LeaseListIte
                     <TableHeaderCell>Tenant</TableHeaderCell>
                     <TableHeaderCell>Property</TableHeaderCell>
                     <TableHeaderCell>Unit</TableHeaderCell>
-                    <TableHeaderCell>Lease</TableHeaderCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -91,7 +90,6 @@ export function NewExitDrawer({ eligibleLeases }: { eligibleLeases: LeaseListIte
                         {lease.units?.properties?.name ?? "—"}
                       </TableCell>
                       <TableCell style={{ color: "var(--color-neutral-700)" }}>{lease.units?.unit_code ?? "—"}</TableCell>
-                      <TableCell style={{ color: "var(--color-neutral-700)" }}>{lease.lease_code}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

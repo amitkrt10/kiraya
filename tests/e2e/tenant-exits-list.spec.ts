@@ -166,9 +166,9 @@ test.describe("Tenant Exits list", () => {
     // An unmatchable search proves the picker filters, without depending on
     // any specific tenant/lease fixture (several other specs create and
     // consume exits against org A's shared seed leases).
-    await picker.getByLabel("Search tenant, property, unit, or lease").fill("zzz-no-such-tenant-zzz");
+    await picker.getByLabel("Search tenant, property, or unit").fill("zzz-no-such-tenant-zzz");
     await expect(picker.getByText("No matches")).toBeVisible();
-    await picker.getByLabel("Search tenant, property, unit, or lease").fill("");
+    await picker.getByLabel("Search tenant, property, or unit").fill("");
 
     const firstRow = picker.locator("table tbody tr").first();
     await expect(firstRow).toBeVisible();

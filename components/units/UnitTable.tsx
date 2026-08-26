@@ -11,6 +11,7 @@ import {
 import { EmptyState } from "@/components/ui/EmptyState";
 import { UnitStatusTag } from "./UnitStatusTag";
 import { UnitFormDrawer } from "./UnitFormDrawer";
+import { deriveUnitOccupancyStatus } from "@/lib/utils/unitStatus";
 import type { UnitListItem } from "@/lib/queries/units";
 import type { UnitType } from "@/lib/queries/unitTypes";
 import type { LeaseListItem } from "@/lib/queries/leases";
@@ -18,8 +19,13 @@ import type { LeaseListItem } from "@/lib/queries/leases";
 /**
  * Rent/Lease Ends stay out of scope (billing phase, P5.2B instruction #20);
  * Current Tenant is real, non-financial schema data now that leases exist
- * (P5.2C), shown alongside — never instead of — the unit's own
- * authoritative status column.
+ * (P5.2C), shown alongside the Status column.
+ *
+ * P6.3-H: Status is never unit.status alone — deriveUnitOccupancyStatus()
+ * combines it with whether this row's own currentLease is present, so a
+ * unit with an ACTIVE lease reads "Occupied" even though nothing ever
+ * writes unit.status = 'OCCUPIED' on assignment. MAINTENANCE/UNAVAILABLE
+ * still come straight from unit.status, unaffected by occupancy.
  */
 export function UnitTable({
   propertyId,
@@ -88,7 +94,7 @@ export function UnitTable({
                     <Link href={`/app/units/${unit.id}`}>{unit.unit_code}</Link>
                   </TableCell>
                   <TableCell>
-                    <UnitStatusTag status={unit.status} />
+                    <UnitStatusTag status={deriveUnitOccupancyStatus(unit.status, Boolean(currentLease))} />
                   </TableCell>
                   <TableCell style={{ color: "var(--color-neutral-700)" }}>
                     {unit.unit_types?.name ?? "—"}

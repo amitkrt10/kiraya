@@ -33,7 +33,7 @@ export function SecurityDepositTab({
         <EmptyState
           icon={Wallet}
           title="No security deposit configured"
-          description="This tenant does not have a security deposit on file yet."
+          description="This occupancy does not have a security deposit on file yet."
         />
       );
     }
@@ -41,7 +41,7 @@ export function SecurityDepositTab({
       <EmptyState
         icon={Wallet}
         title="No security deposit configured"
-        description="This tenant does not have a security deposit on file yet. Record the first receipt once a deposit amount has been agreed."
+        description="This occupancy does not have a security deposit on file yet. Record the first receipt once a deposit amount has been agreed."
         action={<RecordDepositReceiptDialog deposit={null} tenantId={tenantId} leaseId={leaseId} />}
       />
     );

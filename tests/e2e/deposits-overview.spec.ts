@@ -65,7 +65,7 @@ test.describe("Security Deposits overview", () => {
     await signOut(page);
   });
 
-  test("org A sees its own deposit, and the row links into the tenant's Deposit tab", async ({ page }) => {
+  test("P6.3-J: org A sees its own deposit, and the row links into the deposit's exact occupancy — never a generic tenant or unit context", async ({ page }) => {
     await login(page, orgAEmail!, orgAPassword!);
     const existingDepositTenantId =
       process.env.E2E_ORG_A_EXISTING_DEPOSIT_TENANT_ID ?? (await findOrgATenantIdWithDeposit(page));
@@ -80,11 +80,15 @@ test.describe("Security Deposits overview", () => {
     await page.goto("/app/deposits");
     const referenceLink = page.getByRole("link", { name: depositReference!.trim() });
     await expect(referenceLink).toBeVisible();
+    // Never the ambiguous Tenant Detail ?tab=deposit route, and never the
+    // bare unit page either — both can resolve to a different
+    // deposit/occupancy than the one clicked here (P6.3-G/P6.3-I).
+    await expect(referenceLink).toHaveAttribute("href", /^\/app\/units\/[0-9a-f-]+\/occupancies\/[0-9a-f-]+$/);
 
-    // Clicking through lands directly on the tenant's Deposit tab, not Overview.
+    // Clicking through lands on this deposit's exact occupancy, whose Deposit tab shows the same reference.
     await referenceLink.click();
-    await page.waitForURL(new RegExp(`/app/tenants/${existingDepositTenantId}\\?tab=deposit`));
-    await expect(page.getByRole("tab", { name: "Deposit", selected: true })).toBeVisible();
+    await page.waitForURL(/\/app\/units\/[0-9a-f-]+\/occupancies\/[0-9a-f-]+$/);
+    await page.getByRole("tab", { name: "Deposit" }).click();
     await expect(page.getByText(depositReference!.trim())).toBeVisible();
 
     await signOut(page);

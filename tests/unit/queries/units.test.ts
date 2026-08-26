@@ -8,7 +8,7 @@ vi.mock("@/lib/supabase/server", () => ({
   createClient: () => mockCreateClient(),
 }));
 
-const { getPropertyUnits, getUnit, getSuggestedUnitCode } = await import("@/lib/queries/units");
+const { getPropertyUnits, getUnit, getSuggestedUnitCode, isUnitAssignable } = await import("@/lib/queries/units");
 
 describe("getPropertyUnits — property + organization context is respected", () => {
   beforeEach(() => {
@@ -121,5 +121,33 @@ describe("getSuggestedUnitCode — preview only, scoped per property", () => {
     const code = await getSuggestedUnitCode("prop-1", "Kumar Building");
 
     expect(code).toBe("KB-001");
+  });
+});
+
+describe("isUnitAssignable — P6.3-B/C: the one authoritative assignability check, never units.status", () => {
+  beforeEach(() => {
+    mockCreateClient.mockReset();
+  });
+
+  it("calls kiraya.unit_is_assignable() with the given unit id and returns its result", async () => {
+    const rpc = vi.fn(() => Promise.resolve({ data: true, error: null }));
+    mockCreateClient.mockReturnValue({ rpc });
+
+    const result = await isUnitAssignable("unit-1");
+
+    expect(rpc).toHaveBeenCalledWith("unit_is_assignable", { p_unit_id: "unit-1" });
+    expect(result).toBe(true);
+  });
+
+  it("returns false when the RPC reports the unit is not assignable", async () => {
+    mockCreateClient.mockReturnValue({ rpc: vi.fn(() => Promise.resolve({ data: false, error: null })) });
+
+    await expect(isUnitAssignable("unit-1")).resolves.toBe(false);
+  });
+
+  it("throws a descriptive error when the RPC call fails", async () => {
+    mockCreateClient.mockReturnValue({ rpc: vi.fn(() => Promise.resolve({ data: null, error: { message: "boom" } })) });
+
+    await expect(isUnitAssignable("unit-1")).rejects.toThrow("Failed to check unit assignability: boom");
   });
 });

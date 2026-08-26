@@ -1,6 +1,7 @@
 import { getRequestContext } from "@/lib/context/current";
 import { getOrganizationDashboard, getRecentPayments, getUpcomingLeaseExpiries, getCurrentDues } from "@/lib/queries/dashboard";
 import { getBillStatusCounts, getBillDueBreakdown } from "@/lib/queries/bills";
+import { getOrganizationUnitCounts } from "@/lib/queries/properties";
 import { DashboardKpiStrip } from "@/components/dashboard/DashboardKpiStrip";
 import { CurrentDuesTable } from "@/components/dashboard/CurrentDuesTable";
 import { CollectionPerformanceChart } from "@/components/dashboard/CollectionPerformanceChart";
@@ -18,18 +19,19 @@ export default async function DashboardPage() {
 
   const organizationId = context.organization.organizationId;
 
-  const [dashboard, recentPayments, leaseExpiries, billStatusCounts, dueBreakdown, currentDues] = await Promise.all([
+  const [dashboard, recentPayments, leaseExpiries, billStatusCounts, dueBreakdown, currentDues, unitCounts] = await Promise.all([
     getOrganizationDashboard(organizationId),
     getRecentPayments(organizationId),
     getUpcomingLeaseExpiries(organizationId),
     getBillStatusCounts(organizationId),
     getBillDueBreakdown(organizationId),
     getCurrentDues(organizationId),
+    getOrganizationUnitCounts(organizationId),
   ]);
 
   return (
     <div>
-      <DashboardKpiStrip latest={dashboard.latest} overdueCount={dueBreakdown.overdueCount} />
+      <DashboardKpiStrip latest={dashboard.latest} overdueCount={dueBreakdown.overdueCount} unitCounts={unitCounts} />
 
       <div className={styles.panel} style={{ marginBottom: 28 }}>
         <div className={styles.sectionHeading} style={{ marginBottom: 16 }}>
@@ -56,7 +58,7 @@ export default async function DashboardPage() {
           </div>
           <PendingActionsPanel overdueCount={dueBreakdown.overdueCount} overduePropertyCount={dueBreakdown.overduePropertyCount} />
 
-          <div className={[styles.sectionHeading, styles.subsection].join(" ")}>Lease Expiries</div>
+          <div className={[styles.sectionHeading, styles.subsection].join(" ")}>Occupancy Ending Soon</div>
           <LeaseExpiriesPanel expiries={leaseExpiries} />
         </div>
       </div>

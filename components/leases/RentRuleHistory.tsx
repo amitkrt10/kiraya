@@ -33,7 +33,7 @@ export function RentRuleHistory({
         <EmptyState
           icon={Receipt}
           title="No rent rule set"
-          description="Add a rent rule to record the monthly rent for this lease."
+          description="Add a rent rule to record the monthly rent for this occupancy."
           action={canWrite ? <RentRuleFormDrawer leaseId={leaseId} /> : undefined}
         />
       ) : (
